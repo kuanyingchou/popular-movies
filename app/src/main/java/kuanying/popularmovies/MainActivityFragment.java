@@ -1,13 +1,19 @@
 package kuanying.popularmovies;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -37,13 +43,80 @@ public class MainActivityFragment extends Fragment {
     //    /discover/movie/?certification_country=US&certification=R&sort_by=vote_average.desc
     private final String LOG_TAG = MainActivityFragment.class.getSimpleName();
     private static final String MY_API_KEY = "553ac01e8b3b3cc0c17b6489fca129a5";
-    private static final String IMAGE_BASE = "http://image.tmdb.org/t/p/w185/";
+    private static final String SORT_POPULARITY = "popularity.desc";
+    private static final String SORT_RATING = "vote_average.desc";
+    private static final String KEY_SORTING_METHOD = "sorting_method";
+    private static final String KEY_POSITION = "position";
 
-    private ImageView console;
+    private GridView movieGrid;
     private MovieAdapter movieAdapter;
+    private String sortingMethod;
+    private int lastPosition = 0;
 
-    public MainActivityFragment() {
+    public MainActivityFragment() {}
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_main, container, false);
+
+        movieAdapter = new MovieAdapter();
+
+        movieGrid = (GridView) view.findViewById(R.id.movie_grid);
+        movieGrid.setAdapter(movieAdapter);
+
+        if(savedInstanceState!=null) {
+            sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
+        } else {
+            sortingMethod = SORT_POPULARITY;
+        }
+        Log.d(LOG_TAG, sortingMethod);
+        new DataLoader().execute(sortingMethod);
+        if(savedInstanceState!=null) {
+            lastPosition = savedInstanceState.getInt(KEY_POSITION);
+        }
+
+        setHasOptionsMenu(true);
+
+        movieGrid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                Intent intent = new Intent(
+                        getActivity(), DetailActivity.class)
+                        .putExtra("movie", (Parcelable) movieAdapter.getItem(position));
+
+                startActivity(intent);
+            }
+        });
+
+        return view;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_fragment, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_sort_by_popularity) {
+            sortingMethod = SORT_POPULARITY;
+        } else if(id == R.id.action_sort_by_rating) {
+            sortingMethod = SORT_RATING;
+        }
+        new DataLoader().execute(sortingMethod);
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
+        outState.putString(KEY_SORTING_METHOD, sortingMethod);
+        super.onSaveInstanceState(outState);
     }
 
     class MovieAdapter extends BaseAdapter {
@@ -85,25 +158,10 @@ public class MainActivityFragment extends Fragment {
                 //imageView.setScaleType(ImageView.ScaleType.);
                 //imageView.setPadding(8, 8, 8, 8);
             }
-            Log.d(LOG_TAG, "loading "+movies.get(position).getPosterUrl());
+            //Log.d(LOG_TAG, "loading "+movies.get(position).getPosterUrl());
             Picasso.with(getActivity()).load(movies.get(position).getPosterUrl()).into(imageView);
             return imageView;
         }
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_main, container, false);
-
-        movieAdapter = new MovieAdapter();
-        //console = (ImageView) view.findViewById(R.id.consoleView);
-        final GridView movieGrid = (GridView) view.findViewById(R.id.movie_grid);
-        movieGrid.setAdapter(movieAdapter);
-
-        new DataLoader().execute();
-
-        return view;
     }
 
     class DataLoader extends AsyncTask<String, Void, String> {
@@ -121,10 +179,12 @@ public class MainActivityFragment extends Fragment {
                         "http://api.themoviedb.org/3/discover/movie";
                 final String SORT_PARAM = "sort_by";
                 final String KEY_PARAM = "api_key";
+                final String PAGE_PARAM = "page";
 
                 Uri builtUri = Uri.parse(BASE_URL).buildUpon()
-                        .appendQueryParameter(SORT_PARAM, "popularity.desc")
+                        .appendQueryParameter(SORT_PARAM, params[0])
                         .appendQueryParameter(KEY_PARAM, MY_API_KEY)
+                        .appendQueryParameter(PAGE_PARAM, "5")
                         .build();
 
                 URL url = new URL(builtUri.toString());
@@ -180,24 +240,28 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(String s) {
             if(s == null) { return; }
-            Log.d(LOG_TAG, "done loading!");
-            //console.setText(s);
+            //Log.d(LOG_TAG, "done loading!");
+
             try {
                 JSONObject jsonObj = new JSONObject(s);
                 JSONArray resultArray = jsonObj.getJSONArray("results");
 
                 movieAdapter.clear();
                 for(int i = 0; i<resultArray.length(); i++) {
-                    JSONObject movieJsonObj = resultArray.getJSONObject(i);
+                    JSONObject j = resultArray.getJSONObject(i);
                     Movie m = new Movie(
-                        movieJsonObj.getLong("id"),
-                        movieJsonObj.getString("title"),
-                        IMAGE_BASE+movieJsonObj.getString("poster_path"));
+                            j.getLong("id"),
+                            j.optString("original_title"),
+                            j.optString("poster_path"),
+                            j.optString("release_date"),
+                            j.optString("overview"),
+                            j.optDouble("vote_average"));
                     movieAdapter.add(m);
-                    Log.d(LOG_TAG, m.toString());
+                    //Log.d(LOG_TAG, m.toString());
 
                 }
                 movieAdapter.notifyDataSetChanged();
+                movieGrid.setSelection(lastPosition);
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -205,4 +269,7 @@ public class MainActivityFragment extends Fragment {
 
         }
     }
+
+
+
 }

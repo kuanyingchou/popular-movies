@@ -2,4 +2,9 @@
     <string name="app_name">PopularMovies</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="action_sort_by_popularity">Sort by Popularity</string>
+    <string name="action_sort_by_rating">Sort by Highest Rating</string>
+    <string name="title_activity_detail">DetailActivity</string>
+    <string name="date_prefix">"Release Date: "</string>
+    <string name="rating_prefix">"Average Rating: "</string>
 </resources>
