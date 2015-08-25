@@ -33,18 +33,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * A placeholder fragment containing a simple view.
- */
 public class MainActivityFragment extends Fragment {
-    //examples:
-    //  most popular movies: /discover/movie?sort_by=popularity.desc
-    //  highest rated R movies:
-    //    /discover/movie/?certification_country=US&certification=R&sort_by=vote_average.desc
+
+
     private final String LOG_TAG = MainActivityFragment.class.getSimpleName();
     private static final String MY_API_KEY = "553ac01e8b3b3cc0c17b6489fca129a5";
     private static final String SORT_POPULARITY = "popularity.desc";
     private static final String SORT_RATING = "vote_average.desc";
+    private static final String KEY_DATA = "movie_data";
     private static final String KEY_SORTING_METHOD = "sorting_method";
     private static final String KEY_POSITION = "position";
 
@@ -52,6 +48,7 @@ public class MainActivityFragment extends Fragment {
     private MovieAdapter movieAdapter;
     private String sortingMethod;
     private int lastPosition = 0;
+    private String movieData;
 
     public MainActivityFragment() {}
 
@@ -67,13 +64,12 @@ public class MainActivityFragment extends Fragment {
 
         if(savedInstanceState!=null) {
             sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
+            lastPosition = savedInstanceState.getInt(KEY_POSITION);
+            movieData = savedInstanceState.getString(KEY_DATA);
+            movieAdapter.setData(movieData);
         } else {
             sortingMethod = SORT_POPULARITY;
-        }
-        Log.d(LOG_TAG, sortingMethod);
-        new DataLoader().execute(sortingMethod);
-        if(savedInstanceState!=null) {
-            lastPosition = savedInstanceState.getInt(KEY_POSITION);
+            new DataLoader().execute(sortingMethod);
         }
 
         setHasOptionsMenu(true);
@@ -116,6 +112,7 @@ public class MainActivityFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
+        outState.putString(KEY_DATA, movieData);
         super.onSaveInstanceState(outState);
     }
 
@@ -162,6 +159,30 @@ public class MainActivityFragment extends Fragment {
             Picasso.with(getActivity()).load(movies.get(position).getPosterUrl()).into(imageView);
             return imageView;
         }
+
+        public void setData(String s) {
+            try{
+                JSONObject jsonObj = new JSONObject(s);
+                JSONArray resultArray = jsonObj.getJSONArray("results");
+
+                movieAdapter.clear();
+                for(int i = 0; i<resultArray.length(); i++) {
+                    JSONObject j = resultArray.getJSONObject(i);
+                    Movie m = new Movie(
+                            j.getLong("id"),
+                            j.optString("original_title"),
+                            j.optString("poster_path"),
+                            j.optString("release_date"),
+                            j.optString("overview"),
+                            j.optDouble("vote_average"));
+                    movieAdapter.add(m);
+                    //Log.d(LOG_TAG, m.toString());
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            movieAdapter.notifyDataSetChanged();
+        }
     }
 
     class DataLoader extends AsyncTask<String, Void, String> {
@@ -174,6 +195,7 @@ public class MainActivityFragment extends Fragment {
             String jsonStr = null;
 
             try {
+                // from project Sunshine
 
                 final String BASE_URL =
                         "http://api.themoviedb.org/3/discover/movie";
@@ -184,7 +206,7 @@ public class MainActivityFragment extends Fragment {
                 Uri builtUri = Uri.parse(BASE_URL).buildUpon()
                         .appendQueryParameter(SORT_PARAM, params[0])
                         .appendQueryParameter(KEY_PARAM, MY_API_KEY)
-                        .appendQueryParameter(PAGE_PARAM, "5")
+                        .appendQueryParameter(PAGE_PARAM, "1")
                         .build();
 
                 URL url = new URL(builtUri.toString());
@@ -240,32 +262,11 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(String s) {
             if(s == null) { return; }
-            //Log.d(LOG_TAG, "done loading!");
+            Log.d(LOG_TAG, "done loading!");
+            movieData = s;
+            movieAdapter.setData(s);
+            movieGrid.setSelection(lastPosition);
 
-            try {
-                JSONObject jsonObj = new JSONObject(s);
-                JSONArray resultArray = jsonObj.getJSONArray("results");
-
-                movieAdapter.clear();
-                for(int i = 0; i<resultArray.length(); i++) {
-                    JSONObject j = resultArray.getJSONObject(i);
-                    Movie m = new Movie(
-                            j.getLong("id"),
-                            j.optString("original_title"),
-                            j.optString("poster_path"),
-                            j.optString("release_date"),
-                            j.optString("overview"),
-                            j.optDouble("vote_average"));
-                    movieAdapter.add(m);
-                    //Log.d(LOG_TAG, m.toString());
-
-                }
-                movieAdapter.notifyDataSetChanged();
-                movieGrid.setSelection(lastPosition);
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
 
         }
     }
