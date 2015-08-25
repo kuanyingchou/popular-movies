@@ -1,7 +1,6 @@
 package kuanying.popularmovies;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -20,18 +19,12 @@ import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.parceler.Parcels;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit.RestAdapter;
 
 public class MainActivityFragment extends Fragment {
 
@@ -48,7 +41,7 @@ public class MainActivityFragment extends Fragment {
     private MovieAdapter movieAdapter;
     private String sortingMethod;
     private int lastPosition = 0;
-    private String movieData;
+    private DiscoverResult discoverResult;
 
     public MainActivityFragment() {}
 
@@ -65,8 +58,9 @@ public class MainActivityFragment extends Fragment {
         if(savedInstanceState!=null) {
             sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
             lastPosition = savedInstanceState.getInt(KEY_POSITION);
-            movieData = savedInstanceState.getString(KEY_DATA);
-            movieAdapter.setData(movieData);
+            discoverResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_DATA));
+            movieAdapter.setData(discoverResult.getMovies());
+            Log.d(LOG_TAG, discoverResult.toString());
         } else {
             sortingMethod = SORT_POPULARITY;
             new DataLoader().execute(sortingMethod);
@@ -112,7 +106,7 @@ public class MainActivityFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
-        outState.putString(KEY_DATA, movieData);
+        outState.putParcelable(KEY_DATA, Parcels.wrap(discoverResult));
         super.onSaveInstanceState(outState);
     }
 
@@ -151,126 +145,45 @@ public class MainActivityFragment extends Fragment {
                 imageView.setLayoutParams(new ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT));
-                imageView.setLayoutParams(new GridView.LayoutParams(480, 480));
-                //imageView.setScaleType(ImageView.ScaleType.);
-                //imageView.setPadding(8, 8, 8, 8);
+                imageView.setLayoutParams(new GridView.LayoutParams(480, 480)); //TODO
+
             }
             //Log.d(LOG_TAG, "loading "+movies.get(position).getPosterUrl());
             Picasso.with(getActivity()).load(movies.get(position).getPosterUrl()).into(imageView);
             return imageView;
         }
 
-        public void setData(String s) {
-            try{
-                JSONObject jsonObj = new JSONObject(s);
-                JSONArray resultArray = jsonObj.getJSONArray("results");
-
-                movieAdapter.clear();
-                for(int i = 0; i<resultArray.length(); i++) {
-                    JSONObject j = resultArray.getJSONObject(i);
-                    Movie m = new Movie(
-                            j.getLong("id"),
-                            j.optString("original_title"),
-                            j.optString("poster_path"),
-                            j.optString("release_date"),
-                            j.optString("overview"),
-                            j.optDouble("vote_average"));
-                    movieAdapter.add(m);
-                    //Log.d(LOG_TAG, m.toString());
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+        public void setData(List<Movie> movies) {
+            this.movies = movies;
             movieAdapter.notifyDataSetChanged();
         }
     }
 
-    class DataLoader extends AsyncTask<String, Void, String> {
+    class DataLoader extends AsyncTask<String, Void, DiscoverResult> {
 
         @Override
-        protected String doInBackground(String... params) {
+        protected DiscoverResult doInBackground(String... params) {
 
-            HttpURLConnection urlConnection = null;
-            BufferedReader reader = null;
-            String jsonStr = null;
+            return fetchDataRetrofit(params[0]);
+        }
 
-            try {
-                // from project Sunshine
+        private DiscoverResult fetchDataRetrofit(String sortingMethod) {
+            RestAdapter restAdapter = new RestAdapter.Builder()
+                    .setEndpoint("http://api.themoviedb.org")
+                    .build();
 
-                final String BASE_URL =
-                        "http://api.themoviedb.org/3/discover/movie";
-                final String SORT_PARAM = "sort_by";
-                final String KEY_PARAM = "api_key";
-                final String PAGE_PARAM = "page";
-
-                Uri builtUri = Uri.parse(BASE_URL).buildUpon()
-                        .appendQueryParameter(SORT_PARAM, params[0])
-                        .appendQueryParameter(KEY_PARAM, MY_API_KEY)
-                        .appendQueryParameter(PAGE_PARAM, "1")
-                        .build();
-
-                URL url = new URL(builtUri.toString());
-
-                // Create the request to OpenWeatherMap, and open the connection
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-
-                // Read the input stream into a String
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuilder buffer = new StringBuilder();
-                if (inputStream == null) {
-                    // Nothing to do.
-                    return null;
-                }
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
-                    // But it does make debugging a *lot* easier if you print out the completed
-                    // buffer for debugging.
-                    buffer.append(line);
-                    buffer.append("\n");
-                    //Log.d(LOG_TAG, line);
-                }
-
-                if (buffer.length() == 0) {
-                    // Stream was empty.  No point in parsing.
-                    return null;
-                }
-                jsonStr = buffer.toString();
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "Error ", e);
-                return null;
-            } finally {
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        Log.e(LOG_TAG, "Error closing stream", e);
-                    }
-                }
-            }
-
-            return jsonStr;
+            TmdbService service = restAdapter.create(TmdbService.class);
+            return service.listMovies(sortingMethod, 1, MY_API_KEY);
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(DiscoverResult s) {
             if(s == null) { return; }
             Log.d(LOG_TAG, "done loading!");
-            movieData = s;
-            movieAdapter.setData(s);
+            discoverResult = s;
+            movieAdapter.setData(s.getMovies());
             movieGrid.setSelection(lastPosition);
-
-
         }
     }
-
-
 
 }
