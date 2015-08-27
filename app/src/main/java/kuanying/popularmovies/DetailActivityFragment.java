@@ -16,6 +16,8 @@ import android.widget.TextView;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import org.parceler.Parcels;
+
 public class DetailActivityFragment extends Fragment {
 
     public DetailActivityFragment() {
@@ -24,7 +26,7 @@ public class DetailActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Movie m = getActivity().getIntent().getParcelableExtra("movie");
+        Movie m = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
         //Toast.makeText(getActivity(), m.toString(), Toast.LENGTH_SHORT).show();
 
         View view = inflater.inflate(R.layout.fragment_detail, container, false);
