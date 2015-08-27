@@ -142,10 +142,11 @@ public class MainActivityFragment extends Fragment {
                 imageView = (ImageView) convertView;
             } else {
                 imageView = new ImageView(getActivity());
-                imageView.setLayoutParams(new ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT));
-                imageView.setLayoutParams(new GridView.LayoutParams(480, 480)); //TODO
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+                imageView.setLayoutParams(new GridView.LayoutParams(
+                        (int) getResources().getDimension(R.dimen.poster_width),
+                        (int) getResources().getDimension(R.dimen.poster_height)));
 
             }
             //Log.d(LOG_TAG, "loading "+movies.get(position).getPosterUrl());
