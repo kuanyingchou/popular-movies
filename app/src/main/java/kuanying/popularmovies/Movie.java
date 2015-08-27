@@ -12,20 +12,11 @@ public class Movie {
     long id;
     @SerializedName("original_title") String title;
     @SerializedName("poster_path") String posterUrl;
-    @SerializedName("primary_release_date") String releaseDate;
+    @SerializedName("release_date") String releaseDate;
     @SerializedName("overview") String overview;
     @SerializedName("vote_average") double rating;
 
     public Movie() {}
-
-//    public Movie(long id, String title, String poster, String date, String overview, double rating) {
-//        this.id = id;
-//        this.title = title;
-//        this.posterUrl = poster;
-//        this.releaseDate = date;
-//        this.overview = overview;
-//        this.rating = rating;
-//    }
 
     public String getPosterUrl() {
         return IMAGE_BASE+posterUrl;
