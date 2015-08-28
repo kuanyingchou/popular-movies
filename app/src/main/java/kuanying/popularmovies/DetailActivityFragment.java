@@ -41,7 +41,7 @@ public class DetailActivityFragment extends Fragment {
         //setBackdrop(m, view); //experimental
 
         ImageView posterView = (ImageView)view.findViewById(R.id.posterView);
-        Picasso.with(getActivity()).load(m.getBigPosterUrl()).into(posterView);
+        Picasso.with(getActivity()).load(m.getPosterUrl()).into(posterView);
 
         TextView titleView = (TextView)view.findViewById(R.id.titleView);
         titleView.setText(m.getTitle());

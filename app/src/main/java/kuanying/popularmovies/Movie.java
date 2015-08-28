@@ -6,7 +6,7 @@ import org.parceler.Parcel;
 
 @Parcel
 public class Movie {
-    private static final String IMAGE_BASE = "http://image.tmdb.org/t/p/w185/";
+    private static final String IMAGE_BASE = "http://image.tmdb.org/t/p/w300/";
     private static final String BIG_IMAGE_BASE = "http://image.tmdb.org/t/p/w500/";
 
     long id;
