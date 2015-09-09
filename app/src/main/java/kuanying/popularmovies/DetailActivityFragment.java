@@ -33,28 +33,25 @@ import retrofit.client.Response;
 
 public class DetailActivityFragment extends Fragment {
 
+    private static final String KEY_TRAILERS = "trailers";
+    private static final String KEY_REVIEWS = "reviews";
+
     private Movie movie;
-    private List<Trailer> trailers;
-    private List<Review> reviews;
+    private TrailerResult trailerResult;
+    private ReviewResult reviewResult;
 
     public DetailActivityFragment() {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
         //Toast.makeText(getActivity(), movie.toString(), Toast.LENGTH_SHORT).show();
 
         final View view = inflater.inflate(R.layout.fragment_detail, container, false);
-        updateView(view, inflater, container);
 
-        return view;
-    }
-
-    private void updateView(View view, final LayoutInflater inflater, ViewGroup container) {
-
-        getActivity().setTitle("Details");
+        getActivity().setTitle(movie.getTitle()); //TODO: tablet
 
         //setBackdrop(movie, view);
 
@@ -74,50 +71,74 @@ public class DetailActivityFragment extends Fragment {
         dateView.setText(getString(R.string.date_prefix) + movie.getReleaseDate());
 
         //TODO: show "No trailers" when empty
-        //TODO: configuration change
         final ViewGroup trailerView = (ViewGroup)view.findViewById(R.id.trailerView);
-        Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY, new Callback<TrailerResult>() {
-            @Override
-            public void success(TrailerResult trailerResult, Response response) {
-                //Log.d("TEST", trailerResult.getTrailers().toString());
-                trailers = trailerResult.getTrailers();
-                for (int i = 0; i < trailers.size(); i++) { //TODO: upper limit
-                    View itemView = createTrailerItem(inflater, i);
-                    trailerView.addView(itemView);
-                }
-            }
-
-            @Override
-            public void failure(RetrofitError error) {
-
-            }
-        });
-
         final ViewGroup reviewView = (ViewGroup)view.findViewById(R.id.reviewView);
-        Utility.tmdbService.listReviews(movie.getId(), Utility.MY_API_KEY, new Callback<ReviewResult>() {
-            @Override
-            public void success(ReviewResult reviewResult, Response response) {
-                reviews = reviewResult.getReviews();
-                for (int i = 0; i < reviews.size(); i++) { //TODO: upper limit
-                    View itemView = createReviewItem(inflater, i);
-                    reviewView.addView(itemView);
+
+        if(savedInstanceState != null) {
+            trailerResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_TRAILERS));
+            updateTrailerView(trailerView, inflater);
+            reviewResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_REVIEWS));
+            updateReviewView(reviewView, inflater);
+        } else {
+            Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY,
+                    new Callback<TrailerResult>() {
+                @Override
+                public void success(TrailerResult tr, Response response) {
+                    //Log.d("TEST", trailerResult.getTrailers().toString());
+                    trailerResult = tr;
+                    updateTrailerView(trailerView, inflater);
                 }
-            }
 
-            @Override
-            public void failure(RetrofitError error) {
+                @Override
+                public void failure(RetrofitError error) {
 
-            }
-        });
+                }
+            });
+            Utility.tmdbService.listReviews(movie.getId(), Utility.MY_API_KEY,
+                    new Callback<ReviewResult>() {
+                        @Override
+                        public void success(ReviewResult rr, Response response) {
+                            reviewResult = rr;
+                            updateReviewView(reviewView, inflater);
+                        }
+
+                        @Override
+                        public void failure(RetrofitError error) {
+
+                        }
+                    });
+        }
+
+
+        return view;
+    }
+
+    private void updateTrailerView(ViewGroup trailerView, LayoutInflater inflater) {
+        List<Trailer> trailers = trailerResult.getTrailers();
+        for (int i = 0; i < trailers.size(); i++) { //TODO: upper limit
+            View itemView = createTrailerItem(inflater, i);
+            trailerView.addView(itemView);
+        }
+    }
+
+    private void updateReviewView(ViewGroup reviewView, LayoutInflater inflater) {
+        List<Review> reviews = reviewResult.getReviews();
+        for (int i = 0; i < reviews.size(); i++) { //TODO: upper limit
+            View itemView = createReviewItem(inflater, i);
+            reviewView.addView(itemView);
+        }
     }
 
     private View createTrailerItem(LayoutInflater inflater, int position) {
         View trailerView = inflater.inflate(R.layout.trailer_item, null);
         trailerView.setId(position);
         final TextView textView = (TextView)trailerView.findViewById(R.id.trailerText);
-        textView.setText(trailers.get(position).getName());
+        textView.setText(trailerResult.getTrailers().get(position).getName());
         final ImageView imageView = (ImageView)trailerView.findViewById(R.id.trailerImage);
-        Picasso.with(getActivity()).load(trailers.get(position).getThumbnailLink()).into(imageView);
+        //TODO: ripple effect
+        //TODO: play icon overlap
+        Picasso.with(getActivity()).load(
+                trailerResult.getTrailers().get(position).getThumbnailLink()).into(imageView);
 
         trailerView.setOnClickListener(new TrailerClickListener());
         return trailerView;
@@ -127,10 +148,17 @@ public class DetailActivityFragment extends Fragment {
         View reviewView = inflater.inflate(R.layout.review_item, null);
         reviewView.setId(position);
         final TextView authorView = (TextView)reviewView.findViewById(R.id.reviewAuthor);
-        authorView.setText(reviews.get(position).getAuthor());
+        authorView.setText(reviewResult.getReviews().get(position).getAuthor());
         final TextView contentView = (TextView)reviewView.findViewById(R.id.reviewContent);
-        contentView.setText(reviews.get(position).getContent());
+        contentView.setText(reviewResult.getReviews().get(position).getContent());
         return reviewView;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(KEY_TRAILERS, Parcels.wrap(trailerResult));
+        outState.putParcelable(KEY_REVIEWS, Parcels.wrap(reviewResult));
+        super.onSaveInstanceState(outState);
     }
 
     //experimental
@@ -162,7 +190,7 @@ public class DetailActivityFragment extends Fragment {
         @Override
         public void onClick(View v) {
             //ref: http://developer.android.com/training/basics/intents/sending.html#AppChooser
-            final Uri uri = trailers.get(v.getId()).getVideoUri();
+            final Uri uri = trailerResult.getTrailers().get(v.getId()).getVideoUri();
             final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
 
             //TODO: Somehow Youtube is the only target on my phone
