@@ -6,6 +6,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,10 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 import org.parceler.Parcels;
+
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 
 public class DetailActivityFragment extends Fragment {
 
@@ -31,6 +36,17 @@ public class DetailActivityFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_detail, container, false);
         updateView(m, view);
+        Utility.tmdbService.listTrailers(m.id, Utility.MY_API_KEY, new Callback<TrailersResult>() {
+            @Override
+            public void success(TrailersResult trailersResult, Response response) {
+                Log.d("TEST", trailersResult.getTrailers().toString());
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+
+            }
+        });
 
         return view;
     }

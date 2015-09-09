@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import retrofit.Callback;
-import retrofit.RestAdapter;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
@@ -36,7 +35,6 @@ public class MainActivityFragment extends Fragment {
 
 
     private final String LOG_TAG = MainActivityFragment.class.getSimpleName();
-    private static final String MY_API_KEY = "553ac01e8b3b3cc0c17b6489fca129a5";
     private static final String SORT_POPULARITY = "popularity.desc";
     private static final String SORT_RATING = "vote_average.desc";
     private static final String KEY_DATA = "movie_data";
@@ -150,15 +148,12 @@ public class MainActivityFragment extends Fragment {
         if(isNetworkAvailable()) {
             errorPanel.setVisibility(View.GONE);
 
-            RestAdapter restAdapter = new RestAdapter.Builder()
-                    .setEndpoint("http://api.themoviedb.org")
-                    .build();
-
-            TmdbService service = restAdapter.create(TmdbService.class);
-            service.listMovies(sortingMethod, 1, MY_API_KEY, new Callback<DiscoverResult>() {
+            Utility.tmdbService.listMovies(sortingMethod, 1, Utility.MY_API_KEY, new Callback<DiscoverResult>() {
                 @Override
                 public void success(DiscoverResult result, Response response) {
-                    if(result == null) { return; }
+                    if (result == null) {
+                        return;
+                    }
                     Log.d(LOG_TAG, "done loading!");
                     discoverResult = result;
                     movieAdapter.setData(result.getMovies());
