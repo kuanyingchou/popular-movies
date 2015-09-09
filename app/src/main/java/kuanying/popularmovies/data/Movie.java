@@ -1,4 +1,4 @@
-package kuanying.popularmovies;
+package kuanying.popularmovies.data;
 
 import com.google.gson.annotations.SerializedName;
 

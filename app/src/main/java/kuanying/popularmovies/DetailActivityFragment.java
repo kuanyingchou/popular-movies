@@ -22,6 +22,9 @@ import org.parceler.Parcels;
 
 import java.util.List;
 
+import kuanying.popularmovies.data.Movie;
+import kuanying.popularmovies.data.Trailer;
+import kuanying.popularmovies.data.TrailerResult;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -70,12 +73,12 @@ public class DetailActivityFragment extends Fragment {
         final LinearLayout trailerView = (LinearLayout)view.findViewById(R.id.trailerView);
 
         //TODO: configuration change
-        Utility.tmdbService.listTrailers(movie.id, Utility.MY_API_KEY, new Callback<TrailersResult>() {
+        Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY, new Callback<TrailerResult>() {
             @Override
-            public void success(TrailersResult trailersResult, Response response) {
-                //Log.d("TEST", trailersResult.getTrailers().toString());
-                //trailerAdapter.setData(trailersResult.getTrailers());
-                trailers = trailersResult.getTrailers();
+            public void success(TrailerResult trailerResult, Response response) {
+                //Log.d("TEST", trailerResult.getTrailers().toString());
+                //trailerAdapter.setData(trailerResult.getTrailers());
+                trailers = trailerResult.getTrailers();
                 for (int i = 0; i < trailers.size(); i++) { //TODO: upper limit
                     Trailer t = trailers.get(i);
                     View itemView = createTrailerItem(inflater, i);

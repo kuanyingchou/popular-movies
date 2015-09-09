@@ -1,4 +1,4 @@
-package kuanying.popularmovies;
+package kuanying.popularmovies.data;
 
 import org.parceler.Parcel;
 

@@ -60,6 +60,11 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:id="@+id/trailerView"></LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20dp"
+            android:text="Reviews"/>
     </LinearLayout>
 
 </ScrollView>

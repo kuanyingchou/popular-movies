@@ -1,15 +1,15 @@
-package kuanying.popularmovies;
+package kuanying.popularmovies.data;
 
 import org.parceler.Parcel;
 
 import java.util.List;
 
 @Parcel
-public class TrailersResult {
+public class TrailerResult {
     long id;
     List<Trailer> results;
 
-    List<Trailer> getTrailers() {
+    public List<Trailer> getTrailers() {
         return results;
     }
 }

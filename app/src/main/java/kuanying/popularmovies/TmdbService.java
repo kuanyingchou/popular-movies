@@ -1,5 +1,8 @@
 package kuanying.popularmovies;
 
+import kuanying.popularmovies.data.MovieResult;
+import kuanying.popularmovies.data.ReviewResult;
+import kuanying.popularmovies.data.TrailerResult;
 import retrofit.Callback;
 import retrofit.http.GET;
 import retrofit.http.Path;
@@ -12,13 +15,13 @@ public interface TmdbService {
             @Query("sort_by") String sortBy,
             @Query("page") int page,
             @Query("api_key") String apiKey,
-            Callback<DiscoverResult> callback);
+            Callback<MovieResult> callback);
 
     @GET("/movie/{id}/videos")
     void listTrailers(
             @Path("id") long id,
             @Query("api_key") String apiKey,
-            Callback<TrailersResult> callback);
+            Callback<TrailerResult> callback);
 
     @GET("/movie/{id}/reviews")
     void listReviews(

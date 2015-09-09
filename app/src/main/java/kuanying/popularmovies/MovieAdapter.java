@@ -12,6 +12,8 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
+import kuanying.popularmovies.data.Movie;
+
 class MovieAdapter extends BaseAdapter {
     private List<Movie> movies = new ArrayList<>();
     private Context context;

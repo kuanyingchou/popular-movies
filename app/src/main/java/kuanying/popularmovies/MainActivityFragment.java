@@ -20,6 +20,7 @@ import android.widget.TextView;
 
 import org.parceler.Parcels;
 
+import kuanying.popularmovies.data.MovieResult;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -39,7 +40,7 @@ public class MainActivityFragment extends Fragment {
     private MovieAdapter movieAdapter;
     private String sortingMethod;
     private int lastPosition = 0;
-    private DiscoverResult discoverResult;
+    private MovieResult movieResult;
     private TextView errorView;
     private View errorPanel;
 
@@ -59,10 +60,10 @@ public class MainActivityFragment extends Fragment {
         if(savedInstanceState!=null) {
             sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
             lastPosition = savedInstanceState.getInt(KEY_POSITION);
-            discoverResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_DATA));
-            if(discoverResult != null) {
-                //Log.d(LOG_TAG, discoverResult.toString());
-                movieAdapter.setData(discoverResult.getMovies());
+            movieResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_DATA));
+            if(movieResult != null) {
+                //Log.d(LOG_TAG, movieResult.toString());
+                movieAdapter.setData(movieResult.getMovies());
             }
             String error = savedInstanceState.getString(KEY_ERROR);
             if(error != null && ! error.isEmpty()) {
@@ -124,7 +125,7 @@ public class MainActivityFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
-        outState.putParcelable(KEY_DATA, Parcels.wrap(discoverResult));
+        outState.putParcelable(KEY_DATA, Parcels.wrap(movieResult));
         outState.putString(KEY_ERROR, (errorPanel.getVisibility() == View.VISIBLE)?
                 errorView.getText().toString():"");
         super.onSaveInstanceState(outState);
@@ -141,14 +142,14 @@ public class MainActivityFragment extends Fragment {
         if(isNetworkAvailable()) {
             errorPanel.setVisibility(View.GONE);
 
-            Utility.tmdbService.listMovies(sortingMethod, 1, Utility.MY_API_KEY, new Callback<DiscoverResult>() {
+            Utility.tmdbService.listMovies(sortingMethod, 1, Utility.MY_API_KEY, new Callback<MovieResult>() {
                 @Override
-                public void success(DiscoverResult result, Response response) {
+                public void success(MovieResult result, Response response) {
                     if (result == null) {
                         return;
                     }
                     Log.d(LOG_TAG, "done loading!");
-                    discoverResult = result;
+                    movieResult = result;
                     movieAdapter.setData(result.getMovies());
                 }
 

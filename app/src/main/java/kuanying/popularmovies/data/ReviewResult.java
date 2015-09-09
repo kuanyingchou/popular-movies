@@ -1,4 +1,4 @@
-package kuanying.popularmovies;
+package kuanying.popularmovies.data;
 
 import org.parceler.Parcel;
 
@@ -9,4 +9,7 @@ public class ReviewResult {
     long id;
     int page;
     List<Review> results;
+    public List<Review> getReviews() {
+        return results;
+    }
 }
