@@ -23,6 +23,8 @@ import org.parceler.Parcels;
 import java.util.List;
 
 import kuanying.popularmovies.data.Movie;
+import kuanying.popularmovies.data.Review;
+import kuanying.popularmovies.data.ReviewResult;
 import kuanying.popularmovies.data.Trailer;
 import kuanying.popularmovies.data.TrailerResult;
 import retrofit.Callback;
@@ -33,6 +35,7 @@ public class DetailActivityFragment extends Fragment {
 
     private Movie movie;
     private List<Trailer> trailers;
+    private List<Review> reviews;
 
     public DetailActivityFragment() {
     }
@@ -70,19 +73,34 @@ public class DetailActivityFragment extends Fragment {
         TextView dateView = (TextView)view.findViewById(R.id.dateView);
         dateView.setText(getString(R.string.date_prefix) + movie.getReleaseDate());
 
-        final LinearLayout trailerView = (LinearLayout)view.findViewById(R.id.trailerView);
-
+        //TODO: show "No trailers" when empty
         //TODO: configuration change
+        final LinearLayout trailerView = (LinearLayout)view.findViewById(R.id.trailerView);
         Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY, new Callback<TrailerResult>() {
             @Override
             public void success(TrailerResult trailerResult, Response response) {
                 //Log.d("TEST", trailerResult.getTrailers().toString());
-                //trailerAdapter.setData(trailerResult.getTrailers());
                 trailers = trailerResult.getTrailers();
                 for (int i = 0; i < trailers.size(); i++) { //TODO: upper limit
-                    Trailer t = trailers.get(i);
                     View itemView = createTrailerItem(inflater, i);
                     trailerView.addView(itemView);
+                }
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+
+            }
+        });
+
+        final LinearLayout reviewView = (LinearLayout)view.findViewById(R.id.reviewView);
+        Utility.tmdbService.listReviews(movie.getId(), Utility.MY_API_KEY, new Callback<ReviewResult>() {
+            @Override
+            public void success(ReviewResult reviewResult, Response response) {
+                reviews = reviewResult.getReviews();
+                for (int i = 0; i < reviews.size(); i++) { //TODO: upper limit
+                    View itemView = createReviewItem(inflater, i);
+                    reviewView.addView(itemView);
                 }
             }
 
@@ -103,6 +121,16 @@ public class DetailActivityFragment extends Fragment {
 
         trailerView.setOnClickListener(new TrailerClickListener());
         return trailerView;
+    }
+
+    private View createReviewItem(LayoutInflater inflater, int position) {
+        View reviewView = inflater.inflate(R.layout.review_item, null);
+        reviewView.setId(position);
+        final TextView authorView = (TextView)reviewView.findViewById(R.id.reviewAuthor);
+        authorView.setText(reviews.get(position).getAuthor());
+        final TextView contentView = (TextView)reviewView.findViewById(R.id.reviewContent);
+        contentView.setText(reviews.get(position).getContent());
+        return reviewView;
     }
 
     //experimental
