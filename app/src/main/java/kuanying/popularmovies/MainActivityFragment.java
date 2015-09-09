@@ -14,18 +14,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.squareup.picasso.Picasso;
-
 import org.parceler.Parcels;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import retrofit.Callback;
 import retrofit.RetrofitError;
@@ -57,7 +50,7 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        movieAdapter = new MovieAdapter();
+        movieAdapter = new MovieAdapter(getActivity());
         movieGrid = (GridView) view.findViewById(R.id.movie_grid);
         movieGrid.setAdapter(movieAdapter);
         errorPanel = view.findViewById(R.id.error_panel);
@@ -171,57 +164,6 @@ public class MainActivityFragment extends Fragment {
             errorPanel.setVisibility(View.VISIBLE);
         }
     }
-
-    class MovieAdapter extends BaseAdapter {
-        private List<Movie> movies = new ArrayList<>();
-
-        public MovieAdapter() {
-            super();
-        }
-
-        public void clear() { movies.clear(); }
-        public void add(Movie m) { movies.add(m); }
-
-        @Override
-        public int getCount() {
-            return movies.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return movies.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return movies.get(position).getId();
-        }
-
-        @Override
-        public View getView (int position, View convertView, ViewGroup parent) {
-            ImageView imageView;
-            if(convertView != null) {
-                imageView = (ImageView) convertView;
-            } else {
-                imageView = new ImageView(getActivity());
-                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-                imageView.setLayoutParams(new GridView.LayoutParams(
-                        (int) getResources().getDimension(R.dimen.poster_width),
-                        (int) getResources().getDimension(R.dimen.poster_height)));
-
-            }
-            //Log.d(LOG_TAG, "loading "+movies.get(position).getPosterUrl());
-            Picasso.with(getActivity()).load(movies.get(position).getPosterUrl()).into(imageView);
-            return imageView;
-        }
-
-        public void setData(List<Movie> movies) {
-            this.movies = movies;
-            movieAdapter.notifyDataSetChanged();
-        }
-    }
-
 
 
 }
