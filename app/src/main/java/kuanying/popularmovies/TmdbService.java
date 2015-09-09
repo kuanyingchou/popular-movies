@@ -19,4 +19,10 @@ public interface TmdbService {
             @Path("id") long id,
             @Query("api_key") String apiKey,
             Callback<TrailersResult> callback);
+
+    @GET("/movie/{id}/reviews")
+    void listReviews(
+            @Path("id") long id,
+            @Query("api_key") String apiKey,
+            Callback<ReviewResult> callback);
 }
