@@ -75,7 +75,7 @@ public class DetailActivityFragment extends Fragment {
 
         //TODO: show "No trailers" when empty
         //TODO: configuration change
-        final LinearLayout trailerView = (LinearLayout)view.findViewById(R.id.trailerView);
+        final ViewGroup trailerView = (ViewGroup)view.findViewById(R.id.trailerView);
         Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY, new Callback<TrailerResult>() {
             @Override
             public void success(TrailerResult trailerResult, Response response) {
@@ -93,7 +93,7 @@ public class DetailActivityFragment extends Fragment {
             }
         });
 
-        final LinearLayout reviewView = (LinearLayout)view.findViewById(R.id.reviewView);
+        final ViewGroup reviewView = (ViewGroup)view.findViewById(R.id.reviewView);
         Utility.tmdbService.listReviews(movie.getId(), Utility.MY_API_KEY, new Callback<ReviewResult>() {
             @Override
             public void success(ReviewResult reviewResult, Response response) {
