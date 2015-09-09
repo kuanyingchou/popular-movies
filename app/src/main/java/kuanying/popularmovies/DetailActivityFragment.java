@@ -1,12 +1,13 @@
 package kuanying.popularmovies;
 
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,11 +20,16 @@ import com.squareup.picasso.Target;
 
 import org.parceler.Parcels;
 
+import java.util.List;
+
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 public class DetailActivityFragment extends Fragment {
+
+    private Movie movie;
+    private List<Trailer> trailers;
 
     public DetailActivityFragment() {
     }
@@ -31,15 +37,50 @@ public class DetailActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Movie m = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
-        //Toast.makeText(getActivity(), m.toString(), Toast.LENGTH_SHORT).show();
+        movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
+        //Toast.makeText(getActivity(), movie.toString(), Toast.LENGTH_SHORT).show();
 
-        View view = inflater.inflate(R.layout.fragment_detail, container, false);
-        updateView(m, view);
-        Utility.tmdbService.listTrailers(m.id, Utility.MY_API_KEY, new Callback<TrailersResult>() {
+        final View view = inflater.inflate(R.layout.fragment_detail, container, false);
+        updateView(view, inflater, container);
+
+        return view;
+    }
+
+    private void updateView(View view, final LayoutInflater inflater, ViewGroup container) {
+
+        getActivity().setTitle("Details");
+
+        //setBackdrop(movie, view);
+
+        ImageView posterView = (ImageView)view.findViewById(R.id.posterView);
+        Picasso.with(getActivity()).load(movie.getPosterUrl()).into(posterView);
+
+        TextView titleView = (TextView)view.findViewById(R.id.titleView);
+        titleView.setText(movie.getTitle());
+
+        TextView overviewView = (TextView)view.findViewById(R.id.overviewView);
+        overviewView.setText(movie.getOverview());
+
+        TextView ratingView = (TextView)view.findViewById(R.id.ratingView);
+        ratingView.setText(getString(R.string.rating_prefix) + movie.getRating());
+
+        TextView dateView = (TextView)view.findViewById(R.id.dateView);
+        dateView.setText(getString(R.string.date_prefix) + movie.getReleaseDate());
+
+        final LinearLayout trailerView = (LinearLayout)view.findViewById(R.id.trailerView);
+
+        //TODO: configuration change
+        Utility.tmdbService.listTrailers(movie.id, Utility.MY_API_KEY, new Callback<TrailersResult>() {
             @Override
             public void success(TrailersResult trailersResult, Response response) {
-                Log.d("TEST", trailersResult.getTrailers().toString());
+                //Log.d("TEST", trailersResult.getTrailers().toString());
+                //trailerAdapter.setData(trailersResult.getTrailers());
+                trailers = trailersResult.getTrailers();
+                for (int i = 0; i < trailers.size(); i++) { //TODO: upper limit
+                    Trailer t = trailers.get(i);
+                    View itemView = createTrailerItem(inflater, i);
+                    trailerView.addView(itemView);
+                }
             }
 
             @Override
@@ -47,31 +88,21 @@ public class DetailActivityFragment extends Fragment {
 
             }
         });
-
-        return view;
     }
 
-    private void updateView(Movie m, View view) {
-        getActivity().setTitle("Details");
+    private View createTrailerItem(LayoutInflater inflater, int position) {
+        View trailerView = inflater.inflate(R.layout.trailer_item, null);
+        trailerView.setId(position);
+        final TextView textView = (TextView)trailerView.findViewById(R.id.trailerText);
+        textView.setText(trailers.get(position).getName());
+        final ImageView imageView = (ImageView)trailerView.findViewById(R.id.trailerImage);
+        Picasso.with(getActivity()).load(trailers.get(position).getThumbnailLink()).into(imageView);
 
-        //setBackdrop(m, view); //experimental
-
-        ImageView posterView = (ImageView)view.findViewById(R.id.posterView);
-        Picasso.with(getActivity()).load(m.getPosterUrl()).into(posterView);
-
-        TextView titleView = (TextView)view.findViewById(R.id.titleView);
-        titleView.setText(m.getTitle());
-
-        TextView overviewView = (TextView)view.findViewById(R.id.overviewView);
-        overviewView.setText(m.getOverview());
-
-        TextView ratingView = (TextView)view.findViewById(R.id.ratingView);
-        ratingView.setText(getString(R.string.rating_prefix) + m.getRating());
-
-        TextView dateView = (TextView)view.findViewById(R.id.dateView);
-        dateView.setText(getString(R.string.date_prefix) + m.getReleaseDate());
+        trailerView.setOnClickListener(new TrailerClickListener());
+        return trailerView;
     }
 
+    //experimental
     private void setBackdrop(Movie m, View view) {
         //experimental backdrop
         final LinearLayout ll = (LinearLayout)view.findViewById(R.id.detailView);
@@ -93,5 +124,24 @@ public class DetailActivityFragment extends Fragment {
 
             }
         });
+    }
+
+    private class TrailerClickListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            //ref: http://developer.android.com/training/basics/intents/sending.html#AppChooser
+            final Uri uri = trailers.get(v.getId()).getVideoUri();
+            final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+
+            //TODO: Somehow Youtube is the only target on my phone
+            //Log.d("TEST", ""+getActivity().getPackageManager().queryIntentActivities(intent, 0));
+
+            final Intent chooser = Intent.createChooser(intent, "Choose an App");
+            if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+                startActivity(chooser);
+            }
+            startActivity(intent);
+        }
     }
 }

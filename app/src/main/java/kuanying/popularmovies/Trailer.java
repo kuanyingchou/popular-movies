@@ -1,5 +1,7 @@
 package kuanying.popularmovies;
 
+import android.net.Uri;
+
 import org.parceler.Parcel;
 
 @Parcel
@@ -9,14 +11,20 @@ public class Trailer {
     String name;
     String site;
 
+    public String getName() { return name; }
+
+    //assume it's always youtube
+    public Uri getVideoUri() {
+        return Uri.parse("https://www.youtube.com/watch").buildUpon().
+                appendQueryParameter("v", key).build();
+    }
+
+    //ref: http://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
+    public String getThumbnailLink() {
+        return String.format("https://img.youtube.com/vi/%s/default.jpg", key);
+    }
+
     public String toString() {
-        //ref: http://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
-        //thumbnail: http://img.youtube.com/vi/<key>/default.jpg
-
-        //link: https://www.youtube.com/watch?v=<key>
-
-        //assume it's always youtube
-        //return String.format("https://www.youtube.com/watch?v=%s", key);
-        return site;
+        return key;
     }
 }
