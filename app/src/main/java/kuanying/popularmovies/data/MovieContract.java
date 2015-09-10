@@ -19,8 +19,8 @@ public final class MovieContract {
                 _ID + " INTEGER PRIMARY KEY," +
                 COLUMN_NAME_TITLE + " TEXT UNIQUE NOT NULL, " +
                 COLUMN_POSTER_PATH + " TEXT NOT NULL, " +
-                COLUMN_RELEASE_DATE + " TEXT NOT NULL, " +
-                COLUMN_OVERVIEW + " TEXT NOT NULL, " +
+                COLUMN_RELEASE_DATE + " TEXT, " +
+                COLUMN_OVERVIEW + " TEXT, " +
                 COLUMN_VOTE_AVERAGE + " REAL NOT NULL, " +
                 COLUMN_POPULARITY + " REAL NOT NULL, " +
                 COLUMN_FAVORITE + " INTEGER NOT NULL" +

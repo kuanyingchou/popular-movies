@@ -8,7 +8,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -176,7 +175,6 @@ public class MainActivityFragment extends Fragment {
                         if (result == null) {
                             return;
                         }
-                        Log.d(LOG_TAG, "done loading!");
 
                         SQLiteDatabase db = dbHelper.getWritableDatabase();
                         for(Movie m: result.getMovies()) {
@@ -198,7 +196,13 @@ public class MainActivityFragment extends Fragment {
                             }
                             c.close();
                         }
-                        String orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC"; //TODO: sorting
+                        String orderBy;
+                        if(sortingMethod == SORT_POPULARITY) {
+                            orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY;
+                        } else  { //sortingMethod == SORT_RATING
+                            orderBy = MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE;
+                        }
+                        orderBy += " DESC";
                         Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
                                 columns, null, null, null, null, orderBy, "20"); //TODO: limit
                         movieAdapter.swapCursor(c);
