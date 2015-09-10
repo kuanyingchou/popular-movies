@@ -90,8 +90,12 @@ public class MovieProvider extends ContentProvider {
             case MOVIE:
                 throw new UnsupportedOperationException("wrong uri: " + uri);
             case MOVIE_ID:
+                long id = Long.valueOf(uri.getPathSegments().get(1));
+                String s = MovieContract.MovieEntry._ID + " = ?";
+                String[] sArgs = { String.valueOf(id) };
+
                 rowsUpdated = db.update(MovieContract.MovieEntry.TABLE_NAME,
-                        values, selection, selectionArgs);
+                        values, s, sArgs);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);

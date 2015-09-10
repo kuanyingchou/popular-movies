@@ -1,8 +1,8 @@
 package kuanying.popularmovies;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -20,7 +20,6 @@ import android.widget.TextView;
 
 import kuanying.popularmovies.data.Movie;
 import kuanying.popularmovies.data.MovieContract;
-import kuanying.popularmovies.data.MovieDbHelper;
 import kuanying.popularmovies.data.MovieResult;
 import retrofit.Callback;
 import retrofit.RetrofitError;
@@ -46,8 +45,6 @@ public class MainActivityFragment extends Fragment {
     private TextView errorView;
     private View errorPanel;
 
-    private MovieDbHelper dbHelper;
-
     interface ItemClickListener {
         public void onItemClick(long id);
     }
@@ -65,8 +62,6 @@ public class MainActivityFragment extends Fragment {
         movieGrid.setAdapter(movieAdapter);
         errorPanel = view.findViewById(R.id.error_panel);
         errorView = (TextView) view.findViewById(R.id.error_view);
-
-        dbHelper = new MovieDbHelper(getActivity());
 
         if(savedInstanceState!=null) {
             sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
@@ -161,7 +156,6 @@ public class MainActivityFragment extends Fragment {
                 MovieContract.MovieEntry.COLUMN_POSTER_PATH
         };
 
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
         String selection = null;
         String[] selectionArgs = null;
         String orderBy = null;
@@ -173,9 +167,10 @@ public class MainActivityFragment extends Fragment {
             selection = MovieContract.MovieEntry.COLUMN_FAVORITE + " = ?";
             selectionArgs = new String[] { String.valueOf(1) };
         }
+        ContentResolver resolver = getActivity().getContentResolver();
+        Cursor c = resolver.query(MovieContract.MovieEntry.CONTENT_URI,
+                        columns, selection, selectionArgs, orderBy);
 
-        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                columns, selection, selectionArgs, null, null, orderBy);
         movieAdapter.swapCursor(c);
         movieGrid.smoothScrollToPosition(lastPosition);
 
@@ -192,22 +187,20 @@ public class MainActivityFragment extends Fragment {
                         return;
                     }
 
-                    SQLiteDatabase db = dbHelper.getWritableDatabase();
+                    ContentResolver resolver = getActivity().getContentResolver();
                     for(Movie m: result.getMovies()) {
                         //check if the movie is already in the db
-                        String selection = MovieContract.MovieEntry._ID + " = ?";
-                        String[] selectionArgs = { String.valueOf(m.getId()) };
-                        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                                null, selection, selectionArgs, null, null, null);
+
+                        Cursor c = resolver.query(MovieContract.MovieEntry.buildUri(m.getId()),
+                                null, null, null, null);
 
                         if(c.moveToFirst()) {
                             //if it's in the db, update existing values
-                            db.update(MovieContract.MovieEntry.TABLE_NAME,
-                                    m.toContentValuesExcludeFavorite(),
-                                    selection, selectionArgs);
+                            resolver.update(MovieContract.MovieEntry.buildUri(m.getId()),
+                                    m.toContentValuesExcludeFavorite(), null, null);
                         } else {
                             //if it's not, insert the movie to the db
-                            db.insert(MovieContract.MovieEntry.TABLE_NAME, null,
+                            resolver.insert(MovieContract.MovieEntry.buildUri(m.getId()),
                                     m.toContentValues());
                         }
                         c.close();

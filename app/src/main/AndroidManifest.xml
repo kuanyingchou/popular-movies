@@ -28,6 +28,9 @@
             android:label="@string/title_activity_detail"
             android:parentActivityName=".MainActivity">
         </activity>
+        <provider
+            android:authorities="kuanying.popularmovies"
+            android:name=".data.MovieProvider" />
     </application>
 
 </manifest>
