@@ -1,8 +1,8 @@
 package kuanying.popularmovies;
 
 import android.annotation.TargetApi;
+import android.content.ContentValues;
 import android.content.Intent;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -118,7 +118,7 @@ public class DetailActivityFragment extends Fragment {
         }
 
         ToggleButton toggle = (ToggleButton)view.findViewById(R.id.favoriteButton);
-        toggle.setChecked(isFavorite());
+        toggle.setChecked(movie.getIsFavorite());
         toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -133,39 +133,30 @@ public class DetailActivityFragment extends Fragment {
     }
 
     private void addToFavorites() {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        long newRowId = db.insert(
-                MovieContract.MovieEntry.TABLE_NAME,
-                null,
-                movie.toContentValues());
+        movie.setIsFavorite(true);
+        updateFavorites();
     }
 
     private void removeFromFavorites() {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        String selection = MovieContract.MovieEntry._ID + " LIKE ?";
-        String[] selectionArgs = { String.valueOf(movie.getId()) };
-        db.delete(MovieContract.MovieEntry.TABLE_NAME, selection, selectionArgs);
+        movie.setIsFavorite(false);
+        updateFavorites();
     }
 
-    private boolean isFavorite() {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-
-        String[] projection = {
-                MovieContract.MovieEntry._ID
-        };
-        String selection = MovieContract.MovieEntry._ID + " LIKE ?";
+    private void updateFavorites() {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        String selection = MovieContract.MovieEntry._ID + " = ?";
         String[] selectionArgs = { String.valueOf(movie.getId()) };
-
-        Cursor c = db.query(
-                MovieContract.MovieEntry.TABLE_NAME,
-                projection,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                null
-        );
-        return c.moveToFirst();
+        ContentValues values = new ContentValues();
+        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, movie.getIsFavorite());
+        db.update(MovieContract.MovieEntry.TABLE_NAME,
+                values,
+                selection, selectionArgs);
+//        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
+//                null, selection, selectionArgs, null, null, null);
+//        if(c.moveToFirst()) {
+//            Log.d(">>>>>>>>", c.getInt(c.getColumnIndex(MovieContract.MovieEntry.COLUMN_FAVORITE))+"");
+//        }
+//        c.close();
     }
 
     private void updateTrailerView(ViewGroup trailerView, LayoutInflater inflater) {

@@ -1,7 +1,11 @@
 package kuanying.popularmovies;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -20,6 +24,9 @@ import android.widget.TextView;
 
 import org.parceler.Parcels;
 
+import kuanying.popularmovies.data.Movie;
+import kuanying.popularmovies.data.MovieContract;
+import kuanying.popularmovies.data.MovieDbHelper;
 import kuanying.popularmovies.data.MovieResult;
 import retrofit.Callback;
 import retrofit.RetrofitError;
@@ -41,9 +48,10 @@ public class MainActivityFragment extends Fragment {
     private MovieAdapter movieAdapter;
     private String sortingMethod;
     private int lastPosition = 0;
-    private MovieResult movieResult;
     private TextView errorView;
     private View errorPanel;
+
+    private MovieDbHelper dbHelper;
 
     public MainActivityFragment() {}
 
@@ -52,20 +60,22 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        movieAdapter = new MovieAdapter(getActivity());
+        movieAdapter = new MovieAdapter(getActivity(), null, 0);
         movieGrid = (GridView) view.findViewById(R.id.movie_grid);
         movieGrid.setAdapter(movieAdapter);
         errorPanel = view.findViewById(R.id.error_panel);
         errorView = (TextView) view.findViewById(R.id.error_view);
 
+        dbHelper = new MovieDbHelper(getActivity());
+
         if(savedInstanceState!=null) {
             sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
             lastPosition = savedInstanceState.getInt(KEY_POSITION);
-            movieResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_DATA));
-            if(movieResult != null) {
-                //Log.d(LOG_TAG, movieResult.toString());
-                movieAdapter.setData(movieResult.getMovies());
-            }
+            //movieResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_DATA));
+//            if(movieResult != null) {
+//                //Log.d(LOG_TAG, movieResult.toString());
+//                movieAdapter.setData(movieResult.getMovies());
+//            }
             String error = savedInstanceState.getString(KEY_ERROR);
             if(error != null && ! error.isEmpty()) {
                 errorView.setText(error);
@@ -74,8 +84,8 @@ public class MainActivityFragment extends Fragment {
 
         } else {
             sortingMethod = SORT_POPULARITY;
-            loadData();
         }
+        loadData(); //TODO: don't use network on configuration change
 
         setHasOptionsMenu(true);
 
@@ -83,10 +93,18 @@ public class MainActivityFragment extends Fragment {
 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
+                if(cursor != null) {
+
+                }
+                ContentValues values = new ContentValues();
+                DatabaseUtils.cursorRowToContentValues(cursor, values);
+
+                Movie movie = Movie.fromContentValues(values);
+                //Log.d(">>>>>>>>>>", movie.getIsFavorite()+"");
                 Intent intent = new Intent(
                         getActivity(), DetailActivity.class)
-                        .putExtra("movie",
-                                Parcels.wrap(movieAdapter.getItem(position)));
+                        .putExtra("movie", Parcels.wrap(movie));
 
                 startActivity(intent);
             }
@@ -126,7 +144,7 @@ public class MainActivityFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
-        outState.putParcelable(KEY_DATA, Parcels.wrap(movieResult));
+//        outState.putParcelable(KEY_DATA, Parcels.wrap(movieResult));
         outState.putString(KEY_ERROR, (errorPanel.getVisibility() == View.VISIBLE)?
                 errorView.getText().toString():"");
         super.onSaveInstanceState(outState);
@@ -153,8 +171,33 @@ public class MainActivityFragment extends Fragment {
                             return;
                         }
                         Log.d(LOG_TAG, "done loading!");
-                        movieResult = result;
-                        movieAdapter.setData(result.getMovies());
+
+                        SQLiteDatabase db = dbHelper.getWritableDatabase();
+                        for(Movie m: result.getMovies()) {
+                            //check if the movie is already in the db
+                            String selection = MovieContract.MovieEntry._ID + " = ?";
+                            String[] selectionArgs = { String.valueOf(m.getId()) };
+                            Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
+                                    null, selection, selectionArgs, null, null, null);
+
+                            if(c.moveToFirst()) {
+                                //if it's in the db, update existing values
+                                db.update(MovieContract.MovieEntry.TABLE_NAME,
+                                        m.toContentValuesExcludeFavorite(),
+                                        selection, selectionArgs);
+                            } else {
+                                //if it's not, insert the movie to the db
+                                db.insert(MovieContract.MovieEntry.TABLE_NAME, null,
+                                        m.toContentValues());
+                            }
+                            c.close();
+                        }
+                        String orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC"; //TODO: sorting
+                        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
+                                null, null, null, null, null, orderBy, "20"); //TODO: limit
+                        movieAdapter.swapCursor(c);
+                        //movieResult = result;
+                        //movieAdapter.setData(result.getMovies());
                     }
 
                     @Override

@@ -18,7 +18,7 @@ public class Movie {
     @SerializedName("overview") String overview;
     @SerializedName("vote_average") double rating;
     double popularity;
-    boolean isFavorite; 
+    boolean isFavorite;
 
     public Movie() {}
 
@@ -43,6 +43,7 @@ public class Movie {
     }
     public double getPopularity() { return popularity; }
     public boolean getIsFavorite() { return isFavorite; }
+    public void setIsFavorite(boolean f) { isFavorite = f; }
 
     @Override
     public String toString() {
@@ -50,6 +51,11 @@ public class Movie {
     }
 
     public ContentValues toContentValues() {
+        ContentValues values = toContentValuesExcludeFavorite();
+        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, this.getIsFavorite());
+        return values;
+    }
+    public ContentValues toContentValuesExcludeFavorite() {
         ContentValues values = new ContentValues();
         values.put(MovieContract.MovieEntry._ID, this.getId());
         values.put(MovieContract.MovieEntry.COLUMN_NAME_TITLE, this.getTitle());
@@ -58,8 +64,20 @@ public class Movie {
         values.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, this.getReleaseDate());
         values.put(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE, this.getRating());
         values.put(MovieContract.MovieEntry.COLUMN_POPULARITY, this.getPopularity());
-        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, this.getIsFavorite());
         return values;
+    }
+
+    public static Movie fromContentValues(ContentValues values) {
+        Movie m = new Movie();
+        m.id = values.getAsLong(MovieContract.MovieEntry._ID);
+        m.title = values.getAsString(MovieContract.MovieEntry.COLUMN_NAME_TITLE);
+        m.overview = values.getAsString(MovieContract.MovieEntry.COLUMN_OVERVIEW);
+        m.posterUrl = values.getAsString(MovieContract.MovieEntry.COLUMN_POSTER_PATH);
+        m.releaseDate = values.getAsString(MovieContract.MovieEntry.COLUMN_RELEASE_DATE);
+        m.rating = values.getAsDouble(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE);
+        m.popularity = values.getAsDouble(MovieContract.MovieEntry.COLUMN_POPULARITY);
+        m.isFavorite = values.getAsInteger(MovieContract.MovieEntry.COLUMN_FAVORITE)==0?false:true;
+        return m;
     }
 
 }
