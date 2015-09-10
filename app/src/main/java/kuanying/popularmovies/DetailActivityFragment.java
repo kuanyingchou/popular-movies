@@ -1,7 +1,10 @@
 package kuanying.popularmovies;
 
 import android.annotation.TargetApi;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -11,9 +14,11 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
@@ -23,6 +28,8 @@ import org.parceler.Parcels;
 import java.util.List;
 
 import kuanying.popularmovies.data.Movie;
+import kuanying.popularmovies.data.MovieContract;
+import kuanying.popularmovies.data.MovieDbHelper;
 import kuanying.popularmovies.data.Review;
 import kuanying.popularmovies.data.ReviewResult;
 import kuanying.popularmovies.data.Trailer;
@@ -39,6 +46,7 @@ public class DetailActivityFragment extends Fragment {
     private Movie movie;
     private TrailerResult trailerResult;
     private ReviewResult reviewResult;
+    private MovieDbHelper dbHelper;
 
     public DetailActivityFragment() {
     }
@@ -48,6 +56,7 @@ public class DetailActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
         //Toast.makeText(getActivity(), movie.toString(), Toast.LENGTH_SHORT).show();
+        dbHelper = new MovieDbHelper(getActivity());
 
         final View view = inflater.inflate(R.layout.fragment_detail, container, false);
 
@@ -109,8 +118,64 @@ public class DetailActivityFragment extends Fragment {
                     });
         }
 
+        ToggleButton toggle = (ToggleButton)view.findViewById(R.id.favoriteButton);
+        toggle.setChecked(isFavorite());
+        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    addToFavorites();
+                } else {
+                    removeFromFavorites();
+                }
+            }
+        });
 
         return view;
+    }
+
+    private void addToFavorites() {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(MovieContract.MovieEntry._ID, movie.getId());
+        values.put(MovieContract.MovieEntry.COLUMN_NAME_TITLE, movie.getTitle());
+        values.put(MovieContract.MovieEntry.COLUMN_OVERVIEW, movie.getOverview());
+        values.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, movie.getPosterUrl());
+        values.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, movie.getReleaseDate());
+        values.put(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE, movie.getRating());
+
+        long newRowId = db.insert(
+                MovieContract.MovieEntry.TABLE_NAME,
+                null,
+                values);
+    }
+
+    private void removeFromFavorites() {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        String selection = MovieContract.MovieEntry._ID + " LIKE ?";
+        String[] selectionArgs = { String.valueOf(movie.getId()) };
+        db.delete(MovieContract.MovieEntry.TABLE_NAME, selection, selectionArgs);
+    }
+
+    private boolean isFavorite() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        String[] projection = {
+                MovieContract.MovieEntry._ID
+        };
+        String selection = MovieContract.MovieEntry._ID + " LIKE ?";
+        String[] selectionArgs = { String.valueOf(movie.getId()) };
+
+        Cursor c = db.query(
+                MovieContract.MovieEntry.TABLE_NAME,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+        return c.moveToFirst();
     }
 
     private void updateTrailerView(ViewGroup trailerView, LayoutInflater inflater) {

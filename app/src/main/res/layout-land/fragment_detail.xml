@@ -47,7 +47,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:id="@+id/overviewView"/>
-
+                <ToggleButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textOff="Add to Favorites"
+                    android:id="@+id/favoriteButton"
+                    android:textOn="Remove from Favorites"/>
             </LinearLayout>
         </LinearLayout>
         <TextView
