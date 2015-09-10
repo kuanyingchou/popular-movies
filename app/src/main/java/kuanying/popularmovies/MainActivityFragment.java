@@ -1,10 +1,8 @@
 package kuanying.popularmovies;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -21,8 +19,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.TextView;
-
-import org.parceler.Parcels;
 
 import kuanying.popularmovies.data.Movie;
 import kuanying.popularmovies.data.MovieContract;
@@ -94,17 +90,14 @@ public class MainActivityFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
                 Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
-                if(cursor != null) {
-
+                if(cursor == null) {
+                    return;
                 }
-                ContentValues values = new ContentValues();
-                DatabaseUtils.cursorRowToContentValues(cursor, values);
 
-                Movie movie = Movie.fromContentValues(values);
-                //Log.d(">>>>>>>>>>", movie.getIsFavorite()+"");
                 Intent intent = new Intent(
                         getActivity(), DetailActivity.class)
-                        .putExtra("movie", Parcels.wrap(movie));
+                        .putExtra("movie_id", cursor.getLong(
+                                cursor.getColumnIndex(MovieContract.MovieEntry._ID)));
 
                 startActivity(intent);
             }
@@ -160,13 +153,18 @@ public class MainActivityFragment extends Fragment {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
     private void loadData() {
+        final String[] columns = new String [] {
+                MovieContract.MovieEntry._ID,
+                MovieContract.MovieEntry.COLUMN_NAME_TITLE,
+                MovieContract.MovieEntry.COLUMN_POSTER_PATH
+        };
         if(sortingMethod == SORT_FAVORITE) {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
             String selection = MovieContract.MovieEntry.COLUMN_FAVORITE + " = ?";
             String[] selectionArgs = { String.valueOf(1) };
             String orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC"; //TODO: sorting
             Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                    null, selection, selectionArgs, null, null, orderBy); //TODO: limit
+                    columns, selection, selectionArgs, null, null, orderBy); //TODO: limit
             movieAdapter.swapCursor(c);
         } else {
             if(isNetworkAvailable()) {
@@ -202,7 +200,7 @@ public class MainActivityFragment extends Fragment {
                         }
                         String orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC"; //TODO: sorting
                         Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                                null, null, null, null, null, orderBy, "20"); //TODO: limit
+                                columns, null, null, null, null, orderBy, "20"); //TODO: limit
                         movieAdapter.swapCursor(c);
                         //movieResult = result;
                         //movieAdapter.setData(result.getMovies());

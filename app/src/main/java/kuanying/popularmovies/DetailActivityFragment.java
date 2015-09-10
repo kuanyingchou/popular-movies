@@ -3,6 +3,8 @@ package kuanying.popularmovies;
 import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -53,11 +55,25 @@ public class DetailActivityFragment extends Fragment {
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
-        //Toast.makeText(getActivity(), movie.toString(), Toast.LENGTH_SHORT).show();
+        //movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
+        long id = getActivity().getIntent().getLongExtra("movie_id", -1);
+
         dbHelper = new MovieDbHelper(getActivity());
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        String selection = MovieContract.MovieEntry._ID + " = ?";
+        String[] selectionArgs = { String.valueOf(id) };
+        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
+                null, selection, selectionArgs, null, null, null);
+        if(c.moveToFirst()) {
+            ContentValues values = new ContentValues();
+            DatabaseUtils.cursorRowToContentValues(c, values);
+            movie = Movie.fromContentValues(values);
+        }
+
+        //Toast.makeText(getActivity(), movie.toString(), Toast.LENGTH_SHORT).show();
 
         final View view = inflater.inflate(R.layout.fragment_detail, container, false);
+        if(movie == null) return view; //TODO: show empty msg?
 
         getActivity().setTitle(movie.getTitle()); //TODO: tablet
 
