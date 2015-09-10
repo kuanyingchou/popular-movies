@@ -12,7 +12,12 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.ShareActionProvider;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
@@ -49,6 +54,7 @@ public class DetailActivityFragment extends Fragment {
     private TrailerResult trailerResult;
     private ReviewResult reviewResult;
     private MovieDbHelper dbHelper;
+    private ShareActionProvider shareActionProvider;
 
     public DetailActivityFragment() {
     }
@@ -72,6 +78,7 @@ public class DetailActivityFragment extends Fragment {
         }
 
         //Toast.makeText(getActivity(), movie.toString(), Toast.LENGTH_SHORT).show();
+        setHasOptionsMenu(true);
 
         final View view = inflater.inflate(R.layout.fragment_detail, container, false);
         if(movie == null) return view; //TODO: show empty msg?
@@ -104,6 +111,7 @@ public class DetailActivityFragment extends Fragment {
             updateTrailerView(trailerView, inflater);
             reviewResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_REVIEWS));
             updateReviewView(reviewView, inflater);
+            shareActionProvider.setShareIntent(createShareIntent());
         } else {
             Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY,
                     new Callback<TrailerResult>() {
@@ -112,6 +120,7 @@ public class DetailActivityFragment extends Fragment {
                     //Log.d("TEST", trailerResult.getTrailers().toString());
                     trailerResult = tr;
                     updateTrailerView(trailerView, inflater);
+                    shareActionProvider.setShareIntent(createShareIntent());
                 }
 
                 @Override
@@ -170,12 +179,6 @@ public class DetailActivityFragment extends Fragment {
         db.update(MovieContract.MovieEntry.TABLE_NAME,
                 values,
                 selection, selectionArgs);
-//        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-//                null, selection, selectionArgs, null, null, null);
-//        if(c.moveToFirst()) {
-//            Log.d(">>>>>>>>", c.getInt(c.getColumnIndex(MovieContract.MovieEntry.COLUMN_FAVORITE))+"");
-//        }
-//        c.close();
     }
 
     private void updateTrailerView(ViewGroup trailerView, LayoutInflater inflater) {
@@ -267,5 +270,27 @@ public class DetailActivityFragment extends Fragment {
             }
             startActivity(intent);
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_detail, menu);
+        MenuItem menuItem = menu.findItem(R.id.action_share);
+        shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+
+    //from Sunshine
+    private Intent createShareIntent() {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.setType("text/plain");
+        String msg = movie.getTitle() + " ";
+        if(trailerResult.getTrailers().size() > 0) {
+            msg += trailerResult.getTrailers().get(0).getVideoUri();
+        }
+        shareIntent.putExtra(Intent.EXTRA_TEXT, msg); //TODO
+        return shareIntent;
     }
 }
