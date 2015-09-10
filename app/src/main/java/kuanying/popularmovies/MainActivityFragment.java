@@ -122,7 +122,7 @@ public class MainActivityFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-
+        item.setChecked(true);
         if (id == R.id.action_sort_by_popularity) {
             sortingMethod = SORT_POPULARITY;
         } else if(id == R.id.action_sort_by_rating) {
