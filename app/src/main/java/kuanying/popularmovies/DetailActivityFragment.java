@@ -111,7 +111,6 @@ public class DetailActivityFragment extends Fragment {
             updateTrailerView(trailerView, inflater);
             reviewResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_REVIEWS));
             updateReviewView(reviewView, inflater);
-            shareActionProvider.setShareIntent(createShareIntent());
         } else {
             Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY,
                     new Callback<TrailerResult>() {
@@ -277,6 +276,7 @@ public class DetailActivityFragment extends Fragment {
         inflater.inflate(R.menu.menu_detail, menu);
         MenuItem menuItem = menu.findItem(R.id.action_share);
         shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+        shareActionProvider.setShareIntent(createShareIntent()); //TODO: may be too fast
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -287,7 +287,7 @@ public class DetailActivityFragment extends Fragment {
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
         String msg = movie.getTitle() + " ";
-        if(trailerResult.getTrailers().size() > 0) {
+        if(trailerResult!=null && trailerResult.getTrailers().size() > 0) {
             msg += trailerResult.getTrailers().get(0).getVideoUri();
         }
         shareIntent.putExtra(Intent.EXTRA_TEXT, msg); //TODO
