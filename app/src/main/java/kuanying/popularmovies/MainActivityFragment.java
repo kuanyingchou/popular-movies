@@ -38,11 +38,12 @@ public class MainActivityFragment extends Fragment {
     private static final String KEY_SORTING_METHOD = "sorting_method";
     private static final String KEY_POSITION = "position";
     private static final String KEY_ERROR = "error";
+    private static final String KEY_DATA_DISPLAYED= "updated";
 
     private GridView movieGrid;
     private MovieAdapter movieAdapter;
     private String sortingMethod;
-    private int lastPosition = 0;
+    private int lastPosition = GridView.INVALID_POSITION;
     private TextView errorView;
     private View errorPanel;
 
@@ -50,6 +51,7 @@ public class MainActivityFragment extends Fragment {
 
     public MainActivityFragment() {}
 
+    //TODO: update adapter after removing favorites: setNotificationUri
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -66,21 +68,20 @@ public class MainActivityFragment extends Fragment {
         if(savedInstanceState!=null) {
             sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
             lastPosition = savedInstanceState.getInt(KEY_POSITION);
-            //movieResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_DATA));
-//            if(movieResult != null) {
-//                //Log.d(LOG_TAG, movieResult.toString());
-//                movieAdapter.setData(movieResult.getMovies());
-//            }
             String error = savedInstanceState.getString(KEY_ERROR);
             if(error != null && ! error.isEmpty()) {
                 errorView.setText(error);
                 errorPanel.setVisibility(View.VISIBLE);
             }
-
+            boolean dataDisplayed = savedInstanceState.getBoolean(KEY_DATA_DISPLAYED);
+            if(! dataDisplayed) {
+                updateAndLoad();
+            }
         } else {
             sortingMethod = SORT_POPULARITY;
+            updateAndLoad();
         }
-        loadData(); //TODO: don't use network on configuration change
+        load();
 
         setHasOptionsMenu(true);
 
@@ -106,7 +107,7 @@ public class MainActivityFragment extends Fragment {
         reloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                loadData();
+                updateAndLoad();
             }
         });
 
@@ -122,7 +123,6 @@ public class MainActivityFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        item.setChecked(true);
         if (id == R.id.action_sort_by_popularity) {
             sortingMethod = SORT_POPULARITY;
         } else if(id == R.id.action_sort_by_rating) {
@@ -130,12 +130,13 @@ public class MainActivityFragment extends Fragment {
         } else if(id == R.id.action_sort_by_favorites) {
             sortingMethod = SORT_FAVORITE;
         }
-        loadData();
+        updateAndLoad();
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(KEY_DATA_DISPLAYED, movieAdapter.getCursor() != null);
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
 //        outState.putParcelable(KEY_DATA, Parcels.wrap(movieResult));
@@ -151,76 +152,81 @@ public class MainActivityFragment extends Fragment {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
-    private void loadData() {
+
+    private void load() {
         final String[] columns = new String [] {
                 MovieContract.MovieEntry._ID,
                 MovieContract.MovieEntry.COLUMN_NAME_TITLE,
                 MovieContract.MovieEntry.COLUMN_POSTER_PATH
         };
-        if(sortingMethod == SORT_FAVORITE) {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            String selection = MovieContract.MovieEntry.COLUMN_FAVORITE + " = ?";
-            String[] selectionArgs = { String.valueOf(1) };
-            String orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC"; //TODO: sorting
-            Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                    columns, selection, selectionArgs, null, null, orderBy); //TODO: limit
-            movieAdapter.swapCursor(c);
-        } else {
-            if(isNetworkAvailable()) {
-                errorPanel.setVisibility(View.GONE);
 
-                Utility.tmdbService.listMovies(sortingMethod, 1, Utility.MY_API_KEY, new Callback<MovieResult>() {
-                    @Override
-                    public void success(MovieResult result, Response response) {
-                        if (result == null) {
-                            return;
-                        }
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        String selection = null;
+        String[] selectionArgs = null;
+        String orderBy = null;
+        if(sortingMethod == SORT_POPULARITY) {
+            orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC";
+        } else  if(sortingMethod == SORT_RATING) {
+            orderBy = MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE + " DESC";
+        } else if(sortingMethod == SORT_FAVORITE) {
+            selection = MovieContract.MovieEntry.COLUMN_FAVORITE + " = ?";
+            selectionArgs = new String[] { String.valueOf(1) };
+        }
 
-                        SQLiteDatabase db = dbHelper.getWritableDatabase();
-                        for(Movie m: result.getMovies()) {
-                            //check if the movie is already in the db
-                            String selection = MovieContract.MovieEntry._ID + " = ?";
-                            String[] selectionArgs = { String.valueOf(m.getId()) };
-                            Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                                    null, selection, selectionArgs, null, null, null);
+        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
+                columns, selection, selectionArgs, null, null, orderBy);
+        movieAdapter.swapCursor(c);
+        movieGrid.smoothScrollToPosition(lastPosition);
 
-                            if(c.moveToFirst()) {
-                                //if it's in the db, update existing values
-                                db.update(MovieContract.MovieEntry.TABLE_NAME,
-                                        m.toContentValuesExcludeFavorite(),
-                                        selection, selectionArgs);
-                            } else {
-                                //if it's not, insert the movie to the db
-                                db.insert(MovieContract.MovieEntry.TABLE_NAME, null,
-                                        m.toContentValues());
-                            }
-                            c.close();
-                        }
-                        String orderBy;
-                        if(sortingMethod == SORT_POPULARITY) {
-                            orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY;
-                        } else  { //sortingMethod == SORT_RATING
-                            orderBy = MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE;
-                        }
-                        orderBy += " DESC";
+    }
+
+    private void updateAndLoad() {
+        if(isNetworkAvailable()) {
+            Utility.tmdbService.listMovies(sortingMethod, 1,
+                    Utility.MY_API_KEY, new Callback<MovieResult>() {
+                @Override
+                public void success(MovieResult result, Response response) {
+                    errorPanel.setVisibility(View.GONE);
+                    if (result == null) {
+                        return;
+                    }
+
+                    SQLiteDatabase db = dbHelper.getWritableDatabase();
+                    for(Movie m: result.getMovies()) {
+                        //check if the movie is already in the db
+                        String selection = MovieContract.MovieEntry._ID + " = ?";
+                        String[] selectionArgs = { String.valueOf(m.getId()) };
                         Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                                columns, null, null, null, null, orderBy, "20"); //TODO: limit
-                        movieAdapter.swapCursor(c);
-                        //movieResult = result;
-                        //movieAdapter.setData(result.getMovies());
-                    }
+                                null, selection, selectionArgs, null, null, null);
 
-                    @Override
-                    public void failure(RetrofitError error) {
-                        errorView.setText("Connection Error");
-                        errorPanel.setVisibility(View.VISIBLE);
+                        if(c.moveToFirst()) {
+                            //if it's in the db, update existing values
+                            db.update(MovieContract.MovieEntry.TABLE_NAME,
+                                    m.toContentValuesExcludeFavorite(),
+                                    selection, selectionArgs);
+                        } else {
+                            //if it's not, insert the movie to the db
+                            db.insert(MovieContract.MovieEntry.TABLE_NAME, null,
+                                    m.toContentValues());
+                        }
+                        c.close();
                     }
-                });
+                    load();
 
-            } else {
-                errorView.setText("No Network Connnection");
-                errorPanel.setVisibility(View.VISIBLE);
-            }
+                }
+
+                @Override
+                public void failure(RetrofitError error) {
+                    errorView.setText("Failed to Load Data");
+                    errorPanel.setVisibility(View.VISIBLE);
+                    load();
+                }
+            });
+
+        } else {
+            errorView.setText("No Network Connnection");
+            errorPanel.setVisibility(View.VISIBLE);
+            load();
         }
 
     }
