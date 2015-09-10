@@ -135,6 +135,8 @@ public class MainActivityFragment extends Fragment {
             sortingMethod = SORT_POPULARITY;
         } else if(id == R.id.action_sort_by_rating) {
             sortingMethod = SORT_RATING;
+        } else if(id == R.id.action_sort_by_favorites) {
+            sortingMethod = SORT_FAVORITE;
         }
         loadData();
         return super.onOptionsItemSelected(item);
@@ -159,7 +161,13 @@ public class MainActivityFragment extends Fragment {
     }
     private void loadData() {
         if(sortingMethod == SORT_FAVORITE) {
-
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            String selection = MovieContract.MovieEntry.COLUMN_FAVORITE + " = ?";
+            String[] selectionArgs = { String.valueOf(1) };
+            String orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC"; //TODO: sorting
+            Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
+                    null, selection, selectionArgs, null, null, orderBy); //TODO: limit
+            movieAdapter.swapCursor(c);
         } else {
             if(isNetworkAvailable()) {
                 errorPanel.setVisibility(View.GONE);
