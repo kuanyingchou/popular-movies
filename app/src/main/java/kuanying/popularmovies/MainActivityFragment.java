@@ -160,7 +160,7 @@ public class MainActivityFragment extends Fragment {
                 MovieContract.MovieEntry.COLUMN_POSTER_PATH
         };
 
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
         String selection = null;
         String[] selectionArgs = null;
         String orderBy = null;
