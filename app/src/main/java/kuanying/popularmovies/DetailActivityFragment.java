@@ -19,6 +19,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.squareup.picasso.Picasso;
@@ -139,8 +140,10 @@ public class DetailActivityFragment extends Fragment {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     addToFavorites();
+                    Toast.makeText(getActivity(), "Added to Favorites", Toast.LENGTH_SHORT).show();
                 } else {
                     removeFromFavorites();
+                    Toast.makeText(getActivity(), "Removed from Favorites", Toast.LENGTH_SHORT).show();
                 }
             }
         });

@@ -28,11 +28,11 @@
     </LinearLayout>
 
     <GridView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:numColumns="auto_fit"
+        android:columnWidth="120dp"
         android:stretchMode="columnWidth"
-        android:columnWidth="130dp"
         android:verticalSpacing="16dp"
         android:gravity="center"
         android:id="@+id/movie_grid"

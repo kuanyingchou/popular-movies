@@ -22,8 +22,9 @@
             android:orientation="horizontal"
             android:layout_marginBottom="16dp">
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="120dp"
+                android:layout_height="160dp"
+                android:scaleType="centerInside"
                 android:paddingRight="16dp"
                 android:id="@+id/posterView"/>
             <LinearLayout
@@ -44,11 +45,12 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/ratingView"/>
                 <ToggleButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textOff="Add to Favorites"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:id="@+id/favoriteButton"
-                    android:textOn="Remove from Favorites"/>
+                    android:textOn=""
+                    android:textOff=""
+                    android:background="@drawable/favorite_toggle"/>
             </LinearLayout>
         </LinearLayout>
 
