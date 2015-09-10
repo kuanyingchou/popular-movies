@@ -1,5 +1,7 @@
 package kuanying.popularmovies.data;
 
+import android.content.ContentValues;
+
 import com.google.gson.annotations.SerializedName;
 
 import org.parceler.Parcel;
@@ -16,6 +18,7 @@ public class Movie {
     @SerializedName("overview") String overview;
     @SerializedName("vote_average") double rating;
     double popularity;
+    boolean isFavorite; 
 
     public Movie() {}
 
@@ -39,10 +42,24 @@ public class Movie {
         return rating;
     }
     public double getPopularity() { return popularity; }
+    public boolean getIsFavorite() { return isFavorite; }
 
     @Override
     public String toString() {
         return title +"("+id+")";
+    }
+
+    public ContentValues toContentValues() {
+        ContentValues values = new ContentValues();
+        values.put(MovieContract.MovieEntry._ID, this.getId());
+        values.put(MovieContract.MovieEntry.COLUMN_NAME_TITLE, this.getTitle());
+        values.put(MovieContract.MovieEntry.COLUMN_OVERVIEW, this.getOverview());
+        values.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, this.getPosterUrl());
+        values.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, this.getReleaseDate());
+        values.put(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE, this.getRating());
+        values.put(MovieContract.MovieEntry.COLUMN_POPULARITY, this.getPopularity());
+        values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, this.getIsFavorite());
+        return values;
     }
 
 }

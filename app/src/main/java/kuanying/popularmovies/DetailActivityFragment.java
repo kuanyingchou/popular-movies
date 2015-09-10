@@ -1,7 +1,6 @@
 package kuanying.popularmovies;
 
 import android.annotation.TargetApi;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -135,20 +134,10 @@ public class DetailActivityFragment extends Fragment {
 
     private void addToFavorites() {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put(MovieContract.MovieEntry._ID, movie.getId());
-        values.put(MovieContract.MovieEntry.COLUMN_NAME_TITLE, movie.getTitle());
-        values.put(MovieContract.MovieEntry.COLUMN_OVERVIEW, movie.getOverview());
-        values.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, movie.getPosterUrl());
-        values.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, movie.getReleaseDate());
-        values.put(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE, movie.getRating());
-        values.put(MovieContract.MovieEntry.COLUMN_POPULARITY, movie.getPopularity());
-
         long newRowId = db.insert(
                 MovieContract.MovieEntry.TABLE_NAME,
                 null,
-                values);
+                movie.toContentValues());
     }
 
     private void removeFromFavorites() {

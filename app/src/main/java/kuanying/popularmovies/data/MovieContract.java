@@ -13,6 +13,7 @@ public final class MovieContract {
         public static final String COLUMN_OVERVIEW = "overview";
         public static final String COLUMN_VOTE_AVERAGE = "vote_averate";
         public static final String COLUMN_POPULARITY = "popularity";
+        public static final String COLUMN_FAVORITE = "favorite";
 
         public final static String SQL_CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " (" +
                 _ID + " INTEGER PRIMARY KEY," +
@@ -21,7 +22,8 @@ public final class MovieContract {
                 COLUMN_RELEASE_DATE + " TEXT NOT NULL, " +
                 COLUMN_OVERVIEW + " TEXT NOT NULL, " +
                 COLUMN_VOTE_AVERAGE + " REAL NOT NULL, " +
-                COLUMN_POPULARITY + " REAL NOT NULL" +
+                COLUMN_POPULARITY + " REAL NOT NULL, " +
+                COLUMN_FAVORITE + " INTEGER NOT NULL" +
                 " );";
 
         public static final String SQL_DELETE_TABLE =
