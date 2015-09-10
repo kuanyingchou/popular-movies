@@ -15,41 +15,34 @@ public class Movie {
     @SerializedName("release_date") String releaseDate;
     @SerializedName("overview") String overview;
     @SerializedName("vote_average") double rating;
+    double popularity;
 
     public Movie() {}
 
-    public String getPosterUrl() {
-        return IMAGE_BASE+posterUrl;
-    }
+    public String getPosterUrl() { return IMAGE_BASE+posterUrl; }
     public String getBigPosterUrl() {
         return BIG_IMAGE_BASE+posterUrl;
     }
-
     public long getId() {
         return id;
     }
-
     public String getTitle() {
         return title;
     }
     public String getReleaseDate() {
         return releaseDate;
     }
-
     public String getOverview() {
         return overview;
     }
-
     public double getRating() {
         return rating;
     }
-
+    public double getPopularity() { return popularity; }
 
     @Override
     public String toString() {
         return title +"("+id+")";
     }
-
-
 
 }

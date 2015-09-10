@@ -143,6 +143,7 @@ public class DetailActivityFragment extends Fragment {
         values.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, movie.getPosterUrl());
         values.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, movie.getReleaseDate());
         values.put(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE, movie.getRating());
+        values.put(MovieContract.MovieEntry.COLUMN_POPULARITY, movie.getPopularity());
 
         long newRowId = db.insert(
                 MovieContract.MovieEntry.TABLE_NAME,

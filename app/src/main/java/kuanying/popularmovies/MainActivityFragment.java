@@ -31,6 +31,7 @@ public class MainActivityFragment extends Fragment {
     private final String LOG_TAG = MainActivityFragment.class.getSimpleName();
     private static final String SORT_POPULARITY = "popularity.desc";
     private static final String SORT_RATING = "vote_average.desc";
+    private static final String SORT_FAVORITE = "favorites.desc";
     private static final String KEY_DATA = "movie_data";
     private static final String KEY_SORTING_METHOD = "sorting_method";
     private static final String KEY_POSITION = "position";
@@ -73,7 +74,7 @@ public class MainActivityFragment extends Fragment {
 
         } else {
             sortingMethod = SORT_POPULARITY;
-            updateData();
+            loadData();
         }
 
         setHasOptionsMenu(true);
@@ -95,7 +96,7 @@ public class MainActivityFragment extends Fragment {
         reloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateData();
+                loadData();
             }
         });
 
@@ -117,7 +118,7 @@ public class MainActivityFragment extends Fragment {
         } else if(id == R.id.action_sort_by_rating) {
             sortingMethod = SORT_RATING;
         }
-        updateData();
+        loadData();
         return super.onOptionsItemSelected(item);
     }
 
@@ -138,32 +139,37 @@ public class MainActivityFragment extends Fragment {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
-    private void updateData() {
-        if(isNetworkAvailable()) {
-            errorPanel.setVisibility(View.GONE);
-
-            Utility.tmdbService.listMovies(sortingMethod, 1, Utility.MY_API_KEY, new Callback<MovieResult>() {
-                @Override
-                public void success(MovieResult result, Response response) {
-                    if (result == null) {
-                        return;
-                    }
-                    Log.d(LOG_TAG, "done loading!");
-                    movieResult = result;
-                    movieAdapter.setData(result.getMovies());
-                }
-
-                @Override
-                public void failure(RetrofitError error) {
-                    errorView.setText("Connection Error");
-                    errorPanel.setVisibility(View.VISIBLE);
-                }
-            });
+    private void loadData() {
+        if(sortingMethod == SORT_FAVORITE) {
 
         } else {
-            errorView.setText("No Network Connnection");
-            errorPanel.setVisibility(View.VISIBLE);
+            if(isNetworkAvailable()) {
+                errorPanel.setVisibility(View.GONE);
+
+                Utility.tmdbService.listMovies(sortingMethod, 1, Utility.MY_API_KEY, new Callback<MovieResult>() {
+                    @Override
+                    public void success(MovieResult result, Response response) {
+                        if (result == null) {
+                            return;
+                        }
+                        Log.d(LOG_TAG, "done loading!");
+                        movieResult = result;
+                        movieAdapter.setData(result.getMovies());
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        errorView.setText("Connection Error");
+                        errorPanel.setVisibility(View.VISIBLE);
+                    }
+                });
+
+            } else {
+                errorView.setText("No Network Connnection");
+                errorPanel.setVisibility(View.VISIBLE);
+            }
         }
+
     }
 
 
