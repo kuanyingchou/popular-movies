@@ -1,7 +1,6 @@
 package kuanying.popularmovies;
 
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
@@ -49,6 +48,10 @@ public class MainActivityFragment extends Fragment {
 
     private MovieDbHelper dbHelper;
 
+    interface ItemClickListener {
+        public void onItemClick(long id);
+    }
+
     public MainActivityFragment() {}
 
     //TODO: update adapter after removing favorites: setNotificationUri
@@ -94,12 +97,10 @@ public class MainActivityFragment extends Fragment {
                     return;
                 }
 
-                Intent intent = new Intent(
-                        getActivity(), DetailActivity.class)
-                        .putExtra("movie_id", cursor.getLong(
-                                cursor.getColumnIndex(MovieContract.MovieEntry._ID)));
+                ((ItemClickListener)getActivity()).onItemClick(cursor.getLong(
+                        cursor.getColumnIndex(MovieContract.MovieEntry._ID)));
 
-                startActivity(intent);
+
             }
         });
 

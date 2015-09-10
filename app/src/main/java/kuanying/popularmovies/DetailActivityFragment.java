@@ -57,7 +57,7 @@ public class DetailActivityFragment extends Fragment {
     public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         //movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
-        long id = getActivity().getIntent().getLongExtra("movie_id", -1);
+        long id = getArguments().getLong("movie_id");
 
         dbHelper = new MovieDbHelper(getActivity());
         SQLiteDatabase db = dbHelper.getReadableDatabase();
