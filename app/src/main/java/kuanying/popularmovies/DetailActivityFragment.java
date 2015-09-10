@@ -1,11 +1,11 @@
 package kuanying.popularmovies;
 
 import android.annotation.TargetApi;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -36,7 +36,6 @@ import java.util.List;
 
 import kuanying.popularmovies.data.Movie;
 import kuanying.popularmovies.data.MovieContract;
-import kuanying.popularmovies.data.MovieDbHelper;
 import kuanying.popularmovies.data.Review;
 import kuanying.popularmovies.data.ReviewResult;
 import kuanying.popularmovies.data.Trailer;
@@ -53,7 +52,6 @@ public class DetailActivityFragment extends Fragment {
     private Movie movie;
     private TrailerResult trailerResult;
     private ReviewResult reviewResult;
-    private MovieDbHelper dbHelper;
     private ShareActionProvider shareActionProvider;
 
     public DetailActivityFragment() {
@@ -62,15 +60,11 @@ public class DetailActivityFragment extends Fragment {
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        //movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra("movie"));
         long id = getArguments().getLong("movie_id");
 
-        dbHelper = new MovieDbHelper(getActivity());
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        String selection = MovieContract.MovieEntry._ID + " = ?";
-        String[] selectionArgs = { String.valueOf(id) };
-        Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME,
-                null, selection, selectionArgs, null, null, null);
+        ContentResolver resolver = getActivity().getContentResolver();
+        Cursor c = resolver.query(MovieContract.MovieEntry.buildUri(id),
+                null, null, null, null);
         if(c.moveToFirst()) {
             ContentValues values = new ContentValues();
             DatabaseUtils.cursorRowToContentValues(c, values);
@@ -170,14 +164,14 @@ public class DetailActivityFragment extends Fragment {
     }
 
     private void updateFavorites() {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        String selection = MovieContract.MovieEntry._ID + " = ?";
-        String[] selectionArgs = { String.valueOf(movie.getId()) };
+        ContentResolver resolver = getActivity().getContentResolver();
+
         ContentValues values = new ContentValues();
         values.put(MovieContract.MovieEntry.COLUMN_FAVORITE, movie.getIsFavorite());
-        db.update(MovieContract.MovieEntry.TABLE_NAME,
+
+        resolver.update(MovieContract.MovieEntry.buildUri(movie.getId()),
                 values,
-                selection, selectionArgs);
+                null, null);
     }
 
     private void updateTrailerView(ViewGroup trailerView, LayoutInflater inflater) {
@@ -279,8 +273,7 @@ public class DetailActivityFragment extends Fragment {
         shareActionProvider.setShareIntent(createShareIntent()); //TODO: may be too fast
         super.onCreateOptionsMenu(menu, inflater);
     }
-
-
+    
     //from Sunshine
     private Intent createShareIntent() {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
