@@ -44,7 +44,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     private MovieAdapter movieAdapter;
     private String sortingMethod;
     private int lastPosition = GridView.INVALID_POSITION;
-    private TextView errorView;
+    private TextView errorTextView;
     private View errorPanel;
     private View progressView;
     private View emptyView;
@@ -64,7 +64,11 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         movieGrid = (GridView) view.findViewById(R.id.movie_grid);
         movieGrid.setAdapter(movieAdapter);
         errorPanel = view.findViewById(R.id.error_panel);
-        errorView = (TextView) view.findViewById(R.id.error_view);
+        errorTextView = (TextView) view.findViewById(R.id.error_view);
+        progressView = view.findViewById(R.id.movieGridProgress);
+        emptyView = view.findViewById(R.id.movieGridEmpty);
+
+        movieGrid.setEmptyView(emptyView);
 
         if(savedInstanceState!=null) {
             onRestoreInstanceState(savedInstanceState);
@@ -99,10 +103,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             }
         });
 
-        progressView = view.findViewById(R.id.movieGridProgress);
-        emptyView = view.findViewById(R.id.movieGridEmpty);
 
-        movieGrid.setEmptyView(emptyView);
         return view;
     }
 
@@ -115,26 +116,28 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_sort_by_popularity) {
-            sortingMethod = SORT_POPULARITY;
-        } else if(id == R.id.action_sort_by_rating) {
-            sortingMethod = SORT_RATING;
-        } else if(id == R.id.action_sort_by_favorites) {
-            sortingMethod = SORT_FAVORITE;
+        switch(id) {
+            case R.id.action_sort_by_popularity:
+                sortingMethod = SORT_POPULARITY;
+                break;
+            case R.id.action_sort_by_rating:
+                sortingMethod = SORT_RATING;
+                break;
+            case R.id.action_sort_by_favorites:
+                sortingMethod = SORT_FAVORITE;
+                break;
         }
-        //TODO: back to top
+        lastPosition = 0;
         load();
         update();
-        return super.onOptionsItemSelected(item);
+        return true;
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        //outState.putBoolean(KEY_DATA_DISPLAYED, movieAdapter.getCursor() != null);
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
-//        outState.putParcelable(KEY_DATA, Parcels.wrap(movieResult));
-        outState.putString(KEY_ERROR, errorView.getText().toString());
+        outState.putString(KEY_ERROR, errorTextView.getText().toString());
         super.onSaveInstanceState(outState);
     }
     private void onRestoreInstanceState(Bundle inState) {
@@ -204,13 +207,15 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
     private void update() {
 //        movieAdapter.swapCursor(null);
+        showProgress(true);
         if(Utility.isNetworkAvailable(getActivity())) {
-            movieGrid.setEmptyView(progressView); //TODO: progress bar
             Utility.tmdbService.listMovies(sortingMethod, 1,
                     Utility.MY_API_KEY, new Callback<MovieResult>() {
                         @Override
                         public void success(MovieResult result, Response response) {
                             showError(null);
+                            showProgress(false);
+
                             if (result == null) {
                                 return;
                             }
@@ -239,22 +244,28 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                         @Override
                         public void failure(RetrofitError error) {
                             showError("Failed to Load Data");
+                            showProgress(false);
                         }
                     });
 
-            movieGrid.setEmptyView(null);
         } else {
             showError("No Network Connnection");
+            showProgress(false);
         }
 
     }
 
     private void showError(String message) {
-        if(TextUtils.isEmpty(message)) {
+        if (TextUtils.isEmpty(message)) {
+            errorTextView.setText("");
             errorPanel.setVisibility(View.GONE);
         } else {
-            errorView.setText(message);
+            errorTextView.setText(message);
             errorPanel.setVisibility(View.VISIBLE);
         }
+    }
+    private void showProgress(boolean show) {
+        //progressView.setVisibility(View.VISIBLE);
+        progressView.setVisibility(show?View.VISIBLE:View.INVISIBLE);
     }
 }
