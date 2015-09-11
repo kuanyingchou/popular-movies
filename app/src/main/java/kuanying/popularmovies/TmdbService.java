@@ -4,11 +4,19 @@ import kuanying.popularmovies.data.MovieResult;
 import kuanying.popularmovies.data.ReviewResult;
 import kuanying.popularmovies.data.TrailerResult;
 import retrofit.Callback;
+import retrofit.RestAdapter;
 import retrofit.http.GET;
 import retrofit.http.Path;
 import retrofit.http.Query;
 
 public interface TmdbService {
+
+    RestAdapter REST_ADAPTER = new RestAdapter.Builder()
+            .setEndpoint("http://api.themoviedb.org/3")
+            .build();
+
+    TmdbService INSTANCE = REST_ADAPTER.create(TmdbService.class);
+    String MY_API_KEY = "553ac01e8b3b3cc0c17b6489fca129a5";
 
     @GET("/discover/movie")
     void listMovies(

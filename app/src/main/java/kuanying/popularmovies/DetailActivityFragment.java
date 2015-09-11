@@ -108,7 +108,7 @@ public class DetailActivityFragment extends Fragment {
             updateReviewView(reviewView, inflater);
         } else {
             //TODO: upper limit
-            Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY,
+            TmdbService.INSTANCE.listTrailers(movie.getId(), TmdbService.MY_API_KEY,
                     new Callback<TrailerResult>() {
                 @Override
                 public void success(TrailerResult tr, Response response) {
@@ -123,7 +123,7 @@ public class DetailActivityFragment extends Fragment {
 
                 }
             });
-            Utility.tmdbService.listReviews(movie.getId(), Utility.MY_API_KEY,
+            TmdbService.INSTANCE.listReviews(movie.getId(), TmdbService.MY_API_KEY,
                     new Callback<ReviewResult>() {
                         @Override
                         public void success(ReviewResult rr, Response response) {

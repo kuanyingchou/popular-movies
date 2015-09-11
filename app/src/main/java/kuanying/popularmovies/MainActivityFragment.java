@@ -209,8 +209,8 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 //        movieAdapter.swapCursor(null);
         showProgress(true);
         if(Utility.isNetworkAvailable(getActivity())) {
-            Utility.tmdbService.listMovies(sortingMethod, 1,
-                    Utility.MY_API_KEY, new Callback<MovieResult>() {
+            TmdbService.INSTANCE.listMovies(sortingMethod, 1,
+                    TmdbService.MY_API_KEY, new Callback<MovieResult>() {
                         @Override
                         public void success(MovieResult result, Response response) {
                             showError(null);
