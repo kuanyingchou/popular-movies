@@ -1,15 +1,13 @@
 package kuanying.popularmovies;
 
 import android.content.ContentResolver;
-import android.content.Context;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -39,7 +37,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     private static final String KEY_SORTING_METHOD = "sorting_method";
     private static final String KEY_POSITION = "position";
     private static final String KEY_ERROR = "error";
-    private static final String KEY_DATA_DISPLAYED= "updated";
+    //private static final String KEY_DATA_DISPLAYED= "updated";
     private static final int MOVIE_LOADER = 0;
 
     private GridView movieGrid;
@@ -69,11 +67,12 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         errorView = (TextView) view.findViewById(R.id.error_view);
 
         if(savedInstanceState!=null) {
-            restoreSavedInstanceState(savedInstanceState);
+            onRestoreInstanceState(savedInstanceState);
         } else {
             sortingMethod = SORT_POPULARITY;
-            updateAndLoad();
+            update();
         }
+        load();
 
         setHasOptionsMenu(true);
 
@@ -96,7 +95,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         reloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateAndLoad();
+                update();
             }
         });
 
@@ -105,22 +104,6 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
         movieGrid.setEmptyView(emptyView);
         return view;
-    }
-
-    private void restoreSavedInstanceState(Bundle savedInstanceState) {
-        sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
-        lastPosition = savedInstanceState.getInt(KEY_POSITION);
-        String error = savedInstanceState.getString(KEY_ERROR);
-        if(error != null && ! error.isEmpty()) {
-            errorView.setText(error);
-            errorPanel.setVisibility(View.VISIBLE);
-        }
-        boolean dataDisplayed = savedInstanceState.getBoolean(KEY_DATA_DISPLAYED);
-        if(dataDisplayed) {
-            load();
-        } else {
-            updateAndLoad();
-        }
     }
 
     @Override
@@ -139,28 +122,27 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         } else if(id == R.id.action_sort_by_favorites) {
             sortingMethod = SORT_FAVORITE;
         }
-        lastPosition = GridView.INVALID_POSITION;
-        updateAndLoad();
+        //TODO: back to top
+        load();
+        update();
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putBoolean(KEY_DATA_DISPLAYED, movieAdapter.getCursor() != null);
+        //outState.putBoolean(KEY_DATA_DISPLAYED, movieAdapter.getCursor() != null);
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
 //        outState.putParcelable(KEY_DATA, Parcels.wrap(movieResult));
-        outState.putString(KEY_ERROR, (errorPanel.getVisibility() == View.VISIBLE) ?
-                errorView.getText().toString() : "");
+        outState.putString(KEY_ERROR, errorView.getText().toString());
         super.onSaveInstanceState(outState);
     }
-
-    //ref: http://stackoverflow.com/questions/4238921/detect-whether-there-is-an-internet-connection-available-on-android
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    private void onRestoreInstanceState(Bundle inState) {
+        sortingMethod = inState.getString(KEY_SORTING_METHOD);
+        lastPosition = inState.getInt(KEY_POSITION);
+        String error = inState.getString(KEY_ERROR);
+        showError(error);
+        load();
     }
 
     private void load() {
@@ -170,56 +152,6 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         } else {
             getLoaderManager().initLoader(MOVIE_LOADER, null, this);
         }
-    }
-
-    private void updateAndLoad() {
-//        movieAdapter.swapCursor(null);
-        if(isNetworkAvailable()) {
-            Utility.tmdbService.listMovies(sortingMethod, 1,
-                    Utility.MY_API_KEY, new Callback<MovieResult>() {
-                @Override
-                public void success(MovieResult result, Response response) {
-                    errorPanel.setVisibility(View.GONE);
-                    if (result == null) {
-                        return;
-                    }
-
-                    ContentResolver resolver = getActivity().getContentResolver();
-                    for(Movie m: result.getMovies()) {
-                        //check if the movie is already in the db
-
-                        Cursor c = resolver.query(MovieContract.MovieEntry.buildUri(m.getId()),
-                                null, null, null, null);
-
-                        if(c.moveToFirst()) {
-                            //if it's in the db, update existing values
-                            resolver.update(MovieContract.MovieEntry.buildUri(m.getId()),
-                                    m.toContentValuesExcludeFavorite(), null, null);
-                        } else {
-                            //if it's not, insert the movie to the db
-                            resolver.insert(MovieContract.MovieEntry.buildUri(m.getId()),
-                                    m.toContentValues());
-                        }
-                        c.close();
-                    }
-                    load();
-
-                }
-
-                @Override
-                public void failure(RetrofitError error) {
-                    errorView.setText("Failed to Load Data");
-                    errorPanel.setVisibility(View.VISIBLE);
-                    load();
-                }
-            });
-
-        } else {
-            errorView.setText("No Network Connnection");
-            errorPanel.setVisibility(View.VISIBLE);
-            load();
-        }
-
     }
 
     @Override
@@ -249,16 +181,16 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        movieAdapter.swapCursor(data); //TODO: empty
-        if(lastPosition == GridView.INVALID_POSITION) {
-            lastPosition = 0;
-        }
+        movieAdapter.swapCursor(data);
+
         movieGrid.post(new Runnable() {
             @Override
             public void run() {
                 //smoothScrollToPosition() didn't work
                 //Somehow, this line has no effect without post()
-                movieGrid.setSelection(lastPosition);
+                if(lastPosition != GridView.INVALID_POSITION) {
+                    movieGrid.setSelection(lastPosition);
+                }
             }
         });
 
@@ -267,5 +199,62 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         movieAdapter.swapCursor(null);
+    }
+
+
+    private void update() {
+//        movieAdapter.swapCursor(null);
+        if(Utility.isNetworkAvailable(getActivity())) {
+            movieGrid.setEmptyView(progressView); //TODO: progress bar
+            Utility.tmdbService.listMovies(sortingMethod, 1,
+                    Utility.MY_API_KEY, new Callback<MovieResult>() {
+                        @Override
+                        public void success(MovieResult result, Response response) {
+                            showError(null);
+                            if (result == null) {
+                                return;
+                            }
+
+                            ContentResolver resolver = getActivity().getContentResolver();
+                            for (Movie m : result.getMovies()) {
+                                //check if the movie is already in the db
+
+                                Cursor c = resolver.query(MovieContract.MovieEntry.buildUri(m.getId()),
+                                        null, null, null, null);
+
+                                if (c.moveToFirst()) {
+                                    //if it's in the db, update existing values
+                                    resolver.update(MovieContract.MovieEntry.buildUri(m.getId()),
+                                            m.toContentValuesExcludeFavorite(), null, null);
+                                } else {
+                                    //if it's not, insert the movie to the db
+                                    resolver.insert(MovieContract.MovieEntry.buildUri(m.getId()),
+                                            m.toContentValues());
+                                }
+                                c.close();
+                            }
+
+                        }
+
+                        @Override
+                        public void failure(RetrofitError error) {
+                            showError("Failed to Load Data");
+                        }
+                    });
+
+            movieGrid.setEmptyView(null);
+        } else {
+            showError("No Network Connnection");
+        }
+
+    }
+
+    private void showError(String message) {
+        if(TextUtils.isEmpty(message)) {
+            errorPanel.setVisibility(View.GONE);
+        } else {
+            errorView.setText(message);
+            errorPanel.setVisibility(View.VISIBLE);
+        }
     }
 }
