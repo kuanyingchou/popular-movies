@@ -55,13 +55,12 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
     public MainActivityFragment() {}
 
-    //TODO: update adapter after removing favorites: setNotificationUri
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        movieAdapter = new MovieAdapter(getActivity(), null, 0); //TODO: FLAG_REGISTER_CONTENT_OBSERVER
+        movieAdapter = new MovieAdapter(getActivity(), null, 0);
         movieGrid = (GridView) view.findViewById(R.id.movie_grid);
         movieGrid.setAdapter(movieAdapter);
         errorPanel = view.findViewById(R.id.error_panel);
@@ -76,14 +75,15 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                 errorPanel.setVisibility(View.VISIBLE);
             }
             boolean dataDisplayed = savedInstanceState.getBoolean(KEY_DATA_DISPLAYED);
-            if(! dataDisplayed) {
+            if(dataDisplayed) {
+                load();
+            } else {
                 updateAndLoad();
             }
         } else {
             sortingMethod = SORT_POPULARITY;
             updateAndLoad();
         }
-        load();
 
         setHasOptionsMenu(true);
 
@@ -98,7 +98,6 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
                 ((ItemClickListener)getActivity()).onItemClick(cursor.getLong(
                         cursor.getColumnIndex(MovieContract.MovieEntry._ID)));
-
 
             }
         });
@@ -238,7 +237,10 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         movieAdapter.swapCursor(data);
-        movieGrid.smoothScrollToPosition(lastPosition);
+        if(lastPosition != GridView.INVALID_POSITION) {
+            //smoothScrollToPosition() didn't work
+            movieGrid.setSelection(lastPosition);
+        }
     }
 
     @Override

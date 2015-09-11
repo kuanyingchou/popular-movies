@@ -78,7 +78,7 @@ public class DetailActivityFragment extends Fragment {
         final View view = inflater.inflate(R.layout.fragment_detail, container, false);
         if(movie == null) return view; //TODO: show empty msg?
 
-        getActivity().setTitle(movie.getTitle()); //TODO: tablet
+        getActivity().setTitle(movie.getTitle()); //TODO: tablet?
 
         //setBackdrop(movie, view);
 
@@ -97,7 +97,7 @@ public class DetailActivityFragment extends Fragment {
         TextView dateView = (TextView)view.findViewById(R.id.dateView);
         dateView.setText(getString(R.string.date_prefix) + movie.getReleaseDate());
 
-        //TODO: show "No trailers" when empty
+        //TODO: show "No data" when empty
         final ViewGroup trailerView = (ViewGroup)view.findViewById(R.id.trailerView);
         final ViewGroup reviewView = (ViewGroup)view.findViewById(R.id.reviewView);
 
@@ -107,6 +107,7 @@ public class DetailActivityFragment extends Fragment {
             reviewResult = Parcels.unwrap(savedInstanceState.getParcelable(KEY_REVIEWS));
             updateReviewView(reviewView, inflater);
         } else {
+            //TODO: upper limit
             Utility.tmdbService.listTrailers(movie.getId(), Utility.MY_API_KEY,
                     new Callback<TrailerResult>() {
                 @Override
@@ -178,7 +179,7 @@ public class DetailActivityFragment extends Fragment {
     private void updateTrailerView(ViewGroup trailerView, LayoutInflater inflater) {
         if(trailerView==null) return;
         List<Trailer> trailers = trailerResult.getTrailers();
-        for (int i = 0; i < trailers.size(); i++) { //TODO: upper limit
+        for (int i = 0; i < trailers.size(); i++) {
             View itemView = createTrailerItem(inflater, i);
             trailerView.addView(itemView);
         }
@@ -187,7 +188,7 @@ public class DetailActivityFragment extends Fragment {
     private void updateReviewView(ViewGroup reviewView, LayoutInflater inflater) {
         if(reviewView==null) return;
         List<Review> reviews = reviewResult.getReviews();
-        for (int i = 0; i < reviews.size(); i++) { //TODO: upper limit
+        for (int i = 0; i < reviews.size(); i++) {
             View itemView = createReviewItem(inflater, i);
             reviewView.addView(itemView);
         }
@@ -257,9 +258,7 @@ public class DetailActivityFragment extends Fragment {
             final Uri uri = trailerResult.getTrailers().get(v.getId()).getVideoUri();
             final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
 
-            //TODO: Somehow Youtube is the only target on my phone
-            //Log.d("TEST", ""+getActivity().getPackageManager().queryIntentActivities(intent, 0));
-
+            //TODO: Somehow the chooser doesn't show up on my phone
             final Intent chooser = Intent.createChooser(intent, "Choose an App");
             if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
                 startActivity(chooser);
