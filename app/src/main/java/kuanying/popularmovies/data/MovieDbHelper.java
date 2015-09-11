@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class MovieDbHelper extends SQLiteOpenHelper {
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
     private static final String DATABASE_NAME = "movie.db";
 
     public MovieDbHelper(Context context) {
@@ -15,11 +15,13 @@ public class MovieDbHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(MovieContract.MovieEntry.SQL_CREATE_TABLE);
+        db.execSQL(MovieContract.TrailerEntry.SQL_CREATE_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL(MovieContract.MovieEntry.SQL_DELETE_TABLE);
+        db.execSQL(MovieContract.TrailerEntry.SQL_DELETE_TABLE);
         onCreate(db);
     }
 }

@@ -47,4 +47,30 @@ public final class MovieContract {
         public static final String SQL_DELETE_TABLE =
                 "DROP TABLE IF EXISTS " + TABLE_NAME;
     }
+
+    public static final class TrailerEntry implements BaseColumns {
+        public static final String TABLE_NAME = "trailer";
+        public static final String COLUMN_KEY = "key";
+        public static final String COLUMN_NAME = "name";
+        public static final String COLUMN_SITE = "site";
+        public static final String COLUMN_MOVIE_ID = "movie_id";
+
+        public final static String SQL_CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " (" +
+                _ID + " INTEGER PRIMARY KEY," +
+                COLUMN_KEY + " TEXT UNIQUE NOT NULL, " +
+                COLUMN_NAME + " TEXT, " +
+                COLUMN_SITE + " TEXT, " +
+                COLUMN_MOVIE_ID + " INTEGER NOT NULL, " +
+                " FOREIGN KEY (" + COLUMN_MOVIE_ID + ") REFERENCES " +
+                MovieEntry.TABLE_NAME + " (" + MovieEntry._ID + ") " +
+                " );";
+
+        public static final String SQL_DELETE_TABLE =
+                "DROP TABLE IF EXISTS " + TABLE_NAME;
+    }
+
+    public static final class ReviewEntry implements BaseColumns {
+        public static final String TABLE_NAME = "review";
+        //TODO
+    }
 }
