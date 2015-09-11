@@ -129,6 +129,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         } else if(id == R.id.action_sort_by_favorites) {
             sortingMethod = SORT_FAVORITE;
         }
+        lastPosition = GridView.INVALID_POSITION;
         updateAndLoad();
         return super.onOptionsItemSelected(item);
     }
@@ -153,10 +154,11 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     }
 
     private void load() {
-        if(getLoaderManager().getLoader(MOVIE_LOADER) == null) {
-            getLoaderManager().initLoader(MOVIE_LOADER, null, this);
-        } else {
+        Loader<?> loader = getLoaderManager().getLoader(MOVIE_LOADER);
+        if(loader != null) {
             getLoaderManager().restartLoader(MOVIE_LOADER, null, this);
+        } else {
+            getLoaderManager().initLoader(MOVIE_LOADER, null, this);
         }
     }
 
@@ -236,11 +238,19 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        movieAdapter.swapCursor(data);
-        if(lastPosition != GridView.INVALID_POSITION) {
-            //smoothScrollToPosition() didn't work
-            movieGrid.setSelection(lastPosition);
+        movieAdapter.swapCursor(data); //TODO: empty
+        if(lastPosition == GridView.INVALID_POSITION) {
+            lastPosition = 0;
         }
+        movieGrid.post(new Runnable() {
+            @Override
+            public void run() {
+                //smoothScrollToPosition() didn't work
+                //Somehow, this line has no effect without post()
+                movieGrid.setSelection(lastPosition);
+            }
+        });
+
     }
 
     @Override
