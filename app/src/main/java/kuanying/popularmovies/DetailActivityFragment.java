@@ -53,6 +53,7 @@ public class DetailActivityFragment extends Fragment {
     private TrailerResult trailerResult;
     private ReviewResult reviewResult;
     private ShareActionProvider shareActionProvider;
+    private Intent shareIntent = createShareIntent();
 
     public DetailActivityFragment() {
     }
@@ -113,7 +114,7 @@ public class DetailActivityFragment extends Fragment {
                     //Log.d("TEST", trailerResult.getTrailers().toString());
                     trailerResult = tr;
                     updateTrailerView(trailerView, inflater);
-                    shareActionProvider.setShareIntent(createShareIntent());
+                    updateShareIntent();
                 }
 
                 @Override
@@ -175,6 +176,7 @@ public class DetailActivityFragment extends Fragment {
     }
 
     private void updateTrailerView(ViewGroup trailerView, LayoutInflater inflater) {
+        if(trailerView==null) return;
         List<Trailer> trailers = trailerResult.getTrailers();
         for (int i = 0; i < trailers.size(); i++) { //TODO: upper limit
             View itemView = createTrailerItem(inflater, i);
@@ -183,6 +185,7 @@ public class DetailActivityFragment extends Fragment {
     }
 
     private void updateReviewView(ViewGroup reviewView, LayoutInflater inflater) {
+        if(reviewView==null) return;
         List<Review> reviews = reviewResult.getReviews();
         for (int i = 0; i < reviews.size(); i++) { //TODO: upper limit
             View itemView = createReviewItem(inflater, i);
@@ -270,20 +273,22 @@ public class DetailActivityFragment extends Fragment {
         inflater.inflate(R.menu.menu_detail, menu);
         MenuItem menuItem = menu.findItem(R.id.action_share);
         shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
-        shareActionProvider.setShareIntent(createShareIntent()); //TODO: may be too fast
+        shareActionProvider.setShareIntent(createShareIntent());
         super.onCreateOptionsMenu(menu, inflater);
     }
-    
+
     //from Sunshine
     private Intent createShareIntent() {
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
+        return shareIntent;
+    }
+    private void updateShareIntent() {
         String msg = movie.getTitle() + " ";
         if(trailerResult!=null && trailerResult.getTrailers().size() > 0) {
             msg += trailerResult.getTrailers().get(0).getVideoUri();
         }
-        shareIntent.putExtra(Intent.EXTRA_TEXT, msg); //TODO
-        return shareIntent;
+        shareIntent.putExtra(Intent.EXTRA_TEXT, msg);
     }
 }

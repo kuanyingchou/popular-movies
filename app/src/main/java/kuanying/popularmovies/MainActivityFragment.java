@@ -7,6 +7,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,7 +28,7 @@ import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-public class MainActivityFragment extends Fragment {
+public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
 
     private final String LOG_TAG = MainActivityFragment.class.getSimpleName();
@@ -37,6 +40,7 @@ public class MainActivityFragment extends Fragment {
     private static final String KEY_POSITION = "position";
     private static final String KEY_ERROR = "error";
     private static final String KEY_DATA_DISPLAYED= "updated";
+    private static final int MOVIE_LOADER = 0;
 
     private GridView movieGrid;
     private MovieAdapter movieAdapter;
@@ -136,8 +140,8 @@ public class MainActivityFragment extends Fragment {
         outState.putInt(KEY_POSITION, movieGrid.getFirstVisiblePosition());
         outState.putString(KEY_SORTING_METHOD, sortingMethod);
 //        outState.putParcelable(KEY_DATA, Parcels.wrap(movieResult));
-        outState.putString(KEY_ERROR, (errorPanel.getVisibility() == View.VISIBLE)?
-                errorView.getText().toString():"");
+        outState.putString(KEY_ERROR, (errorPanel.getVisibility() == View.VISIBLE) ?
+                errorView.getText().toString() : "");
         super.onSaveInstanceState(outState);
     }
 
@@ -150,30 +154,7 @@ public class MainActivityFragment extends Fragment {
     }
 
     private void load() {
-        final String[] columns = new String [] {
-                MovieContract.MovieEntry._ID,
-                MovieContract.MovieEntry.COLUMN_NAME_TITLE,
-                MovieContract.MovieEntry.COLUMN_POSTER_PATH
-        };
-
-        String selection = null;
-        String[] selectionArgs = null;
-        String orderBy = null;
-        if(sortingMethod == SORT_POPULARITY) {
-            orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC";
-        } else  if(sortingMethod == SORT_RATING) {
-            orderBy = MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE + " DESC";
-        } else if(sortingMethod == SORT_FAVORITE) {
-            selection = MovieContract.MovieEntry.COLUMN_FAVORITE + " = ?";
-            selectionArgs = new String[] { String.valueOf(1) };
-        }
-        ContentResolver resolver = getActivity().getContentResolver();
-        Cursor c = resolver.query(MovieContract.MovieEntry.CONTENT_URI,
-                        columns, selection, selectionArgs, orderBy);
-
-        movieAdapter.swapCursor(c);
-        movieGrid.smoothScrollToPosition(lastPosition);
-
+        getLoaderManager().initLoader(MOVIE_LOADER, null, this);
     }
 
     private void updateAndLoad() {
@@ -225,5 +206,39 @@ public class MainActivityFragment extends Fragment {
 
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        final String[] columns = new String [] {
+                MovieContract.MovieEntry._ID,
+                MovieContract.MovieEntry.COLUMN_NAME_TITLE,
+                MovieContract.MovieEntry.COLUMN_POSTER_PATH
+        };
 
+        String selection = null;
+        String[] selectionArgs = null;
+        String orderBy = null;
+        if(sortingMethod == SORT_POPULARITY) {
+            orderBy = MovieContract.MovieEntry.COLUMN_POPULARITY + " DESC";
+        } else  if(sortingMethod == SORT_RATING) {
+            orderBy = MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE + " DESC";
+        } else if(sortingMethod == SORT_FAVORITE) {
+            selection = MovieContract.MovieEntry.COLUMN_FAVORITE + " = ?";
+            selectionArgs = new String[] { String.valueOf(1) };
+        }
+
+        return new CursorLoader(
+                getActivity(), MovieContract.MovieEntry.CONTENT_URI,
+                null, selection, selectionArgs, orderBy);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        movieAdapter.swapCursor(data);
+        movieGrid.smoothScrollToPosition(lastPosition);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        movieAdapter.swapCursor(null);
+    }
 }
