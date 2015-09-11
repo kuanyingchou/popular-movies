@@ -48,14 +48,19 @@ public class MovieProvider extends ContentProvider {
 
         switch(match) {
             case MOVIE:
-                return db.query(MovieContract.MovieEntry.TABLE_NAME, projection,
+                Cursor c = db.query(MovieContract.MovieEntry.TABLE_NAME, projection,
                         selection, selectionArgs, null, null, sortOrder);
+                //so the main view will get updated when data changed
+                c.setNotificationUri(getContext().getContentResolver(),
+                        MovieContract.MovieEntry.CONTENT_URI);
+                return c;
             case MOVIE_ID:
                 long id = Long.valueOf(uri.getPathSegments().get(1));
                 String s = MovieContract.MovieEntry._ID + " = ?";
                 String[] sArgs = { String.valueOf(id) };
                 return db.query(MovieContract.MovieEntry.TABLE_NAME, projection,
                         s, sArgs, null, null, null);
+
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
