@@ -61,7 +61,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        movieAdapter = new MovieAdapter(getActivity(), null, 0);
+        movieAdapter = new MovieAdapter(getActivity(), null, 0); //TODO: FLAG_REGISTER_CONTENT_OBSERVER
         movieGrid = (GridView) view.findViewById(R.id.movie_grid);
         movieGrid.setAdapter(movieAdapter);
         errorPanel = view.findViewById(R.id.error_panel);
@@ -154,7 +154,11 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     }
 
     private void load() {
-        getLoaderManager().initLoader(MOVIE_LOADER, null, this);
+        if(getLoaderManager().getLoader(MOVIE_LOADER) == null) {
+            getLoaderManager().initLoader(MOVIE_LOADER, null, this);
+        } else {
+            getLoaderManager().restartLoader(MOVIE_LOADER, null, this);
+        }
     }
 
     private void updateAndLoad() {

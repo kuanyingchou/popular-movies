@@ -55,7 +55,7 @@ public class MovieProvider extends ContentProvider {
                 String s = MovieContract.MovieEntry._ID + " = ?";
                 String[] sArgs = { String.valueOf(id) };
                 return db.query(MovieContract.MovieEntry.TABLE_NAME, projection,
-                        s, sArgs, null, null, sortOrder);
+                        s, sArgs, null, null, null);
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
