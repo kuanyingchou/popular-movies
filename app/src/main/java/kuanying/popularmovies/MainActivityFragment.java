@@ -48,6 +48,8 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     private int lastPosition = GridView.INVALID_POSITION;
     private TextView errorView;
     private View errorPanel;
+    private View progressView;
+    private View emptyView;
 
     interface ItemClickListener {
         public void onItemClick(long id);
@@ -67,19 +69,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         errorView = (TextView) view.findViewById(R.id.error_view);
 
         if(savedInstanceState!=null) {
-            sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
-            lastPosition = savedInstanceState.getInt(KEY_POSITION);
-            String error = savedInstanceState.getString(KEY_ERROR);
-            if(error != null && ! error.isEmpty()) {
-                errorView.setText(error);
-                errorPanel.setVisibility(View.VISIBLE);
-            }
-            boolean dataDisplayed = savedInstanceState.getBoolean(KEY_DATA_DISPLAYED);
-            if(dataDisplayed) {
-                load();
-            } else {
-                updateAndLoad();
-            }
+            restoreSavedInstanceState(savedInstanceState);
         } else {
             sortingMethod = SORT_POPULARITY;
             updateAndLoad();
@@ -92,11 +82,11 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
                 Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
-                if(cursor == null) {
+                if (cursor == null) {
                     return;
                 }
 
-                ((ItemClickListener)getActivity()).onItemClick(cursor.getLong(
+                ((ItemClickListener) getActivity()).onItemClick(cursor.getLong(
                         cursor.getColumnIndex(MovieContract.MovieEntry._ID)));
 
             }
@@ -110,7 +100,27 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             }
         });
 
+        progressView = view.findViewById(R.id.movieGridProgress);
+        emptyView = view.findViewById(R.id.movieGridEmpty);
+
+        movieGrid.setEmptyView(emptyView);
         return view;
+    }
+
+    private void restoreSavedInstanceState(Bundle savedInstanceState) {
+        sortingMethod = savedInstanceState.getString(KEY_SORTING_METHOD);
+        lastPosition = savedInstanceState.getInt(KEY_POSITION);
+        String error = savedInstanceState.getString(KEY_ERROR);
+        if(error != null && ! error.isEmpty()) {
+            errorView.setText(error);
+            errorPanel.setVisibility(View.VISIBLE);
+        }
+        boolean dataDisplayed = savedInstanceState.getBoolean(KEY_DATA_DISPLAYED);
+        if(dataDisplayed) {
+            load();
+        } else {
+            updateAndLoad();
+        }
     }
 
     @Override
@@ -163,6 +173,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     }
 
     private void updateAndLoad() {
+//        movieAdapter.swapCursor(null);
         if(isNetworkAvailable()) {
             Utility.tmdbService.listMovies(sortingMethod, 1,
                     Utility.MY_API_KEY, new Callback<MovieResult>() {
